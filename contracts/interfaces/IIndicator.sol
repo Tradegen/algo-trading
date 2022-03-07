@@ -16,7 +16,7 @@ interface IIndicator {
     /**
     * @dev Returns the name of this indicator.
     */
-    function getName() external view returns (string memory);
+    function getName() external pure returns (string memory);
 
     /**
     * @dev Returns the value of this indicator for the given instance.

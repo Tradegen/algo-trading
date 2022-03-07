@@ -7,8 +7,11 @@ import "../openzeppelin-solidity/contracts/SafeMath.sol";
 // Inheritance
 import '../interfaces/IIndicator.sol';
 
-contract Up is IIndicator {
+contract EMA is IIndicator {
     using SafeMath for uint256;
+
+    uint256 public constant multiplierNumerator = 2;
+    uint256 public multiplierDenominator;
 
     constructor() {}
 
@@ -19,7 +22,7 @@ contract Up is IIndicator {
     * @dev Returns the name of this indicator.
     */
     function getName() external pure override returns (string memory) {
-        return "Up";
+        return "EMA";
     }
 
     /**
@@ -30,7 +33,7 @@ contract Up is IIndicator {
     function getValue(uint256 _instance) external view override returns (uint256[] memory) {
         uint256[] memory result = new uint256[](1);
 
-        result[0] = 1;
+        result[0] = instances[_instance].value;
 
         return result;
     }
@@ -41,9 +44,7 @@ contract Up is IIndicator {
     * @return (uint256[] memory) Indicator value history for the given instance.
     */
     function getHistory(uint256 _instance) external view override returns (uint256[] memory) {
-        uint256[] memory result = new uint256[](1);
-
-        result[0] = 1;
+        uint256[] memory result = instances[_instance].history;
 
         return result;
     }
@@ -55,12 +56,16 @@ contract Up is IIndicator {
     * @return (uint256) Instance number of the indicator.
     */
     function addTradingBot(uint256[] memory _params) external returns (uint256) {
+        require(_params.length >= 1, "Indicator: not enough params.");
+        require(_params[0] > 1 && _params[0] <= 200, "Indicator: param out of bounds.");
+
+        multiplierDenominator = _params[0].add(1);
         numberOfInstances = numberOfInstances.add(1);
         instances[numberOfInstances] = State({
             tradingBot: msg.sender,
             value: 1,
             params: _params,
-            variables: new uint256[](0),
+            variables: new uint256[](1),
             history: new uint256[](0)
         });
 
@@ -72,13 +77,24 @@ contract Up is IIndicator {
     /**
     * @dev Updates the indicator's state for the given instance, based on the latest price feed update.
     * @notice This function is meant to be called by the TradingBot contract.
+    * @notice Variables[0] is previous EMA value.
     * @param _instance Instance number of this indicator.
     * @param _latestPrice The latest price from oracle price feed.
     */
     function update(uint256 _instance, uint256 _latestPrice) external override onlyTradingBot(_instance) {
-        instances[_instance].history.push(1);
+        {
+        State memory data = instances[_instance];
+        uint256 currentValue = data.value;
+        uint256 newValue = (currentValue == 0) ? _latestPrice :
+                                    (_latestPrice >= data.variables[0]) ?
+                                    (multiplierNumerator.mul(_latestPrice.sub(data.variables[0])).div(multiplierDenominator)).add(data.variables[0]) :
+                                    data.variables[0].sub(multiplierNumerator.mul(data.variables[0].sub(_latestPrice)).div(multiplierDenominator));
 
-        emit Updated(_instance, _latestPrice, 1);
+        instances[_instance].value = newValue;
+        instances[_instance].history.push(newValue);
+
+        emit Updated(_instance, _latestPrice, newValue);
+        }
     }
 
     /* ========== MODIFIERS ========== */

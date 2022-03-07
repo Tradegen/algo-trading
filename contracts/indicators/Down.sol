@@ -18,7 +18,7 @@ contract Down is IIndicator {
     /**
     * @dev Returns the name of this indicator.
     */
-    function getName() external view override returns (string memory) {
+    function getName() external pure override returns (string memory) {
         return "Down";
     }
 
