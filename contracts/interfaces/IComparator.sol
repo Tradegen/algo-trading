@@ -3,11 +3,16 @@ pragma solidity ^0.8.3;
 
 interface IComparator {
     /**
+    * @dev Returns the name of this comparator.
+    */
+    function getName() external view returns (string memory);
+
+    /**
     * @dev Creates an instance of this comparator for the contract calling this function.
     * @notice This function is meant to be called by the TradingBot contract.
     * @param _firstIndicatorAddress Address of the comparator's first indicator.
     * @param _secondIndicatorAddress Address of the comparator's second indicator.
-    * @return (uint256) Index of this instance of the comparator.
+    * @return (uint256) Instance number of the comparator.
     */
     function addTradingBot(address _firstIndicatorAddress, address _secondIndicatorAddress) external returns (uint256);
 
