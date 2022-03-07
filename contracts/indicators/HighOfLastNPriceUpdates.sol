@@ -7,11 +7,8 @@ import "../openzeppelin-solidity/contracts/SafeMath.sol";
 // Inheritance
 import '../interfaces/IIndicator.sol';
 
-contract EMA is IIndicator {
+contract HighOfLastNPriceUpdates is IIndicator {
     using SafeMath for uint256;
-
-    uint256 public constant multiplierNumerator = 2;
-    uint256 public multiplierDenominator;
 
     constructor() {}
 
@@ -22,7 +19,7 @@ contract EMA is IIndicator {
     * @dev Returns the name of this indicator.
     */
     function getName() external pure override returns (string memory) {
-        return "EMA";
+        return "HighOfLastNPriceUpdates";
     }
 
     /**
@@ -59,13 +56,12 @@ contract EMA is IIndicator {
         require(_params.length >= 1, "Indicator: not enough params.");
         require(_params[0] > 1 && _params[0] <= 200, "Indicator: param out of bounds.");
 
-        multiplierDenominator = _params[0].add(1);
         numberOfInstances = numberOfInstances.add(1);
         instances[numberOfInstances] = State({
             tradingBot: msg.sender,
             value: 0,
             params: _params,
-            variables: new uint256[](1),
+            variables: new uint256[](0),
             history: new uint256[](0)
         });
 
@@ -77,23 +73,25 @@ contract EMA is IIndicator {
     /**
     * @dev Updates the indicator's state for the given instance, based on the latest price feed update.
     * @notice This function is meant to be called by the TradingBot contract.
-    * @notice Variables[0] is previous EMA value.
     * @param _instance Instance number of this indicator.
     * @param _latestPrice The latest price from oracle price feed.
     */
     function update(uint256 _instance, uint256 _latestPrice) external override onlyTradingBot(_instance) {
         {
         State memory data = instances[_instance];
-        uint256 currentValue = data.value;
-        uint256 newValue = (currentValue == 0) ? _latestPrice :
-                                    (_latestPrice >= data.variables[0]) ?
-                                    (multiplierNumerator.mul(_latestPrice.sub(data.variables[0])).div(multiplierDenominator)).add(data.variables[0]) :
-                                    data.variables[0].sub(multiplierNumerator.mul(data.variables[0].sub(_latestPrice)).div(multiplierDenominator));
+        uint256 length = (data.history.length >= data.params[0]) ? data.params[0] : 0;
+        uint256 high;
 
-        instances[_instance].value = newValue;
-        instances[_instance].history.push(newValue);
+        instances[_instance].history.push(_latestPrice);
 
-        emit Updated(_instance, _latestPrice, newValue);
+        for (uint256 i = 0; i < length; i++)
+        {
+            high = (data.history[length - i - 1] > high) ? data.history[length - i - 1] : high;
+        }
+
+        instances[_instance].value = high;
+        
+        emit Updated(_instance, _latestPrice, high);
         }
     }
 
