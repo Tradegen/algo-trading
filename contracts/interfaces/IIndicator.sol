@@ -40,10 +40,11 @@ interface IIndicator {
     /**
     * @dev Creates an instance of this indicator for the contract calling this function.
     * @notice This function is meant to be called by the TradingBot contract.
+    * @param _tradingBotOwner Address of the trading bot owner.
     * @param _params An array of params to use for this indicator.
     * @return (uint256) Instance number of the indicator.
     */
-    function addTradingBot(uint256[] memory _params) external returns (uint256);
+    function addTradingBot(address _tradingBotOwner, uint256[] memory _params) external returns (uint256);
 
     /**
     * @dev Updates the indicator's state for the given instance, based on the latest price feed update.
@@ -53,8 +54,28 @@ interface IIndicator {
     */
     function update(uint256 _instance, IPriceAggregator.Candlestick memory _latestPrice) external;
 
+    /* ========== RESTRICTED FUNCTIONS ========== */
+
+    /**
+    * @dev Marks this indicator as a default indicator.
+    * @notice This function can only be called by the Components contract.
+    * @notice Once an indicator is marked as default, it cannot go back to being a purchasable indicator.
+    * @notice If an indicator is marked as default, any trading bot can integrate it for free.
+    */
+    function markAsDefault() external;
+
+    /**
+    * @dev Allows the user to use this indicator in trading bots.
+    * @notice This function can only be called by the Components contract.
+    * @notice Meant to be called by the Components contract when a user purchases this indicator.
+    * @param _user Address of the user.
+    */
+    function registerUser(address _user) external;
+
     /* ========== EVENTS ========== */
 
     event Updated(uint256 indexed instance, IPriceAggregator.Candlestick latestPrice, uint256 newValue);
     event AddedTradingBot(address indexed tradingBot, uint256 instance, uint256[] params);
+    event MarkedAsDefault();
+    event RegisteredUser(address user);
 }

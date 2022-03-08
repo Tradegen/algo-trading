@@ -13,7 +13,17 @@ contract EMA is IIndicator {
     uint256 public constant multiplierNumerator = 2;
     uint256 public multiplierDenominator;
 
-    constructor() {}
+    address public immutable componentsAddress;
+
+    constructor(address _componentsAddress, bool _isDefault) {
+        require(_componentsAddress != address(0), "Indicator: invalid address for Components contract.");
+
+        componentsAddress = _componentsAddress;
+        isDefault = _isDefault;
+    }
+
+    bool public isDefault;
+    mapping(address => bool) public canUse;
 
     uint256 numberOfInstances;
     mapping (uint256 => State) public instances;
@@ -52,10 +62,12 @@ contract EMA is IIndicator {
     /**
     * @dev Creates an instance of this indicator for the contract calling this function.
     * @notice This function is meant to be called by the TradingBot contract.
+    * @param _tradingBotOwner Address of the trading bot owner.
     * @param _params An array of params to use for this indicator.
     * @return (uint256) Instance number of the indicator.
     */
-    function addTradingBot(uint256[] memory _params) external returns (uint256) {
+    function addTradingBot(address _tradingBotOwner, uint256[] memory _params) external override returns (uint256) {
+        require(isDefault || canUse[_tradingBotOwner], "Indicator: Don't have permission to use this indicator.");
         require(_params.length >= 1, "Indicator: not enough params.");
         require(_params[0] > 1 && _params[0] <= 200, "Indicator: param out of bounds.");
 
@@ -97,11 +109,52 @@ contract EMA is IIndicator {
         }
     }
 
+    /* ========== RESTRICTED FUNCTIONS ========== */
+
+    /**
+    * @dev Marks this indicator as a default indicator.
+    * @notice This function can only be called by the Components contract.
+    * @notice Once an indicator is marked as default, it cannot go back to being a purchasable indicator.
+    * @notice If an indicator is marked as default, any trading bot can integrate it for free.
+    */
+    function markAsDefault() external override onlyComponentsContract isNotDefault {
+        isDefault = true;
+
+        emit MarkedAsDefault();
+    }
+
+    /**
+    * @dev Allows the user to use this indicator in trading bots.
+    * @notice This function can only be called by the Components contract.
+    * @notice Meant to be called by the Components contract when a user purchases this indicator.
+    * @param _user Address of the user.
+    */
+    function registerUser(address _user) external override onlyComponentsContract isNotDefault {
+        require(_user != address(0), "Indicator: invalid address for user.");
+        require(!canUse[_user], "Indicator: already can use this indicator.");
+
+        canUse[_user] = true;
+
+        emit RegisteredUser(_user);
+    }
+
     /* ========== MODIFIERS ========== */
 
     modifier onlyTradingBot(uint256 _instance) {
         require(instances[_instance].tradingBot == msg.sender,
                 "Indicator: Wrong trading bot for this instance.");
+        _;
+    }
+
+    modifier onlyComponentsContract() {
+        require(msg.sender == componentsAddress,
+                "Indicator: Only the Components contract can call this function.");
+        _;
+    }
+
+    modifier isNotDefault() {
+        require(!isDefault,
+                "Indicator: Indicator needs to be non-default to call this function.");
         _;
     }
 }
