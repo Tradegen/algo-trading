@@ -54,4 +54,11 @@ interface ITradingBot {
     * @notice This function is meant to be called once per timeframe by a Keeper contract.
     */
     function onPriceFeedUpdate() external;
+
+    /**
+    * @dev Updates the owner of this trading bot.
+    * @notice This function is meant to be called by the TradingBots contract.
+    * @param _newOwner Address of the new owner.
+    */
+    function updateOwner(address _newOwner) external;
 }
