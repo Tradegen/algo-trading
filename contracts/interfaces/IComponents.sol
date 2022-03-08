@@ -3,7 +3,29 @@
 pragma solidity ^0.8.3;
 
 interface IComponents {
+
+    struct Component {
+        address componentAddress;
+        address owner;
+        uint256 tokenID;
+        bool isIndicator;
+        bool isDefault;
+        uint256 price;
+    }
+
     // Views
+
+    /**
+     * @dev Given the address of a component, returns the component's info.
+     * @param _component Address of the indicator/comparator.
+     * @return (address, address, uint256, bool, bool, uint256) Address of the indicator/comparator,
+     *                                                          address of the owner,
+     *                                                          token ID,
+     *                                                          whether the component is an indicator,
+     *                                                          whether the indicator/comparator is default,
+     *                                                          and price of the indicator/comparator.
+     */
+    function getComponentInfo(address _component) external view returns (address, address, uint256, bool, bool, uint256);
 
     /**
      * @dev Returns whether the user has purchased the given indicator.
