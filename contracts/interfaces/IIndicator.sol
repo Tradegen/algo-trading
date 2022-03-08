@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.3;
 
+// Interfaces
+import '../interfaces/IPriceAggregator.sol';
+
 interface IIndicator {
 
     struct State {
@@ -48,10 +51,10 @@ interface IIndicator {
     * @param _instance Instance number of this indicator.
     * @param _latestPrice The latest price from oracle price feed.
     */
-    function update(uint256 _instance, uint256 _latestPrice) external;
+    function update(uint256 _instance, IPriceAggregator.Candlestick memory _latestPrice) external;
 
     /* ========== EVENTS ========== */
 
-    event Updated(uint256 indexed instance, uint256 latestPrice, uint256 newValue);
+    event Updated(uint256 indexed instance, IPriceAggregator.Candlestick latestPrice, uint256 newValue);
     event AddedTradingBot(address indexed tradingBot, uint256 instance, uint256[] params);
 }

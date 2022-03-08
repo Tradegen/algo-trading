@@ -76,13 +76,13 @@ contract LowOfLastNPriceUpdates is IIndicator {
     * @param _instance Instance number of this indicator.
     * @param _latestPrice The latest price from oracle price feed.
     */
-    function update(uint256 _instance, uint256 _latestPrice) external override onlyTradingBot(_instance) {
+    function update(uint256 _instance, IPriceAggregator.Candlestick memory _latestPrice) external override onlyTradingBot(_instance) {
         {
         State memory data = instances[_instance];
         uint256 length = (data.history.length >= data.params[0]) ? data.params[0] : 0;
         uint256 low;
 
-        instances[_instance].history.push(_latestPrice);
+        instances[_instance].history.push(_latestPrice.low);
 
         for (uint256 i = 0; i < length; i++)
         {
