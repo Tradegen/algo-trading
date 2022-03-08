@@ -131,7 +131,7 @@ contract TradingBot is ITradingBot {
     */
     function onPriceFeedUpdate() external override hasStarted hasGeneratedRules isInitialized {
         require(canBeUpdated(), "TradingBot: need to wait for a new candlestick before updating.");
-        
+
         IPriceAggregator.Candlestick memory latestPrice = IPriceAggregator(priceAggregatorRouter.getPriceAggregator(tradedAsset)).getCurrentPrice();
 
         numberOfUpdates = numberOfUpdates.add(1);
@@ -343,14 +343,46 @@ contract TradingBot is ITradingBot {
         //TODO: check if bot purchased indicator/comparator
     }
 
-    function _checkEntryRules() internal view returns (bool) {
-        //TODO
+    /**
+    * @dev Returns whether all entry rules are met.
+    */
+    function _checkEntryRules() internal returns (bool) {
+        {
+        uint256 numEntryRules = numberOfEntryRules;
+
+        for (uint256 i = 0; i < numEntryRules; i++) {
+            if (!IComparator(entryRules[i].comparatorAddress).checkConditions(entryRules[i].comparatorInstance))
+            {
+                return false;
+            }
+        }
+        }
+
+        return true;
     }
 
-    function _checkExitRules() internal view returns (bool) {
-        //TODO
+    /**
+    * @dev Returns whether at least one exit rule is met.
+    */
+    function _checkExitRules() internal returns (bool) {
+        {
+        uint256 numExitRules = numberOfExitRules;
+
+        for (uint256 i = 0; i < numExitRules; i++) {
+            if (IComparator(exitRules[i].comparatorAddress).checkConditions(exitRules[i].comparatorInstance))
+            {
+                return true;
+            }
+        }
+        }
+
+        return false;
     }
 
+    /**
+    * @dev Updates each entry/exit rule's indicators with the latest candlestick.
+    * @param _latestPrice The latest candlestick.
+    */
     function _updateRules(IPriceAggregator.Candlestick memory _latestPrice) internal {
         {
         uint256 numEntryRules = numberOfEntryRules;
