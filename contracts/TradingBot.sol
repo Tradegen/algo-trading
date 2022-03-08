@@ -8,6 +8,8 @@ import "./openzeppelin-solidity/contracts/SafeMath.sol";
 import './interfaces/IIndicator.sol';
 import './interfaces/IComparator.sol';
 import './interfaces/IBotPerformanceOracle.sol';
+import './interfaces/IPriceAggregatorRouter.sol';
+import './interfaces/IPriceAggregator.sol';
 
 // Inheritance
 import './interfaces/ITradingBot.sol';
@@ -20,9 +22,10 @@ contract TradingBot is ITradingBot {
 
     // Contracts
     address public override owner;
-    address public syntheticBotToken;
-    address public factory;
-    IBotPerformanceOracle public botPerformanceOracle;
+    address public immutable syntheticBotToken;
+    address public immutable factory;
+    IPriceAggregatorRouter public immutable priceAggregatorRouter;
+    IBotPerformanceOracle public immutable botPerformanceOracle;
 
     // Fees
     uint256 public override tokenMintFee;
@@ -44,8 +47,11 @@ contract TradingBot is ITradingBot {
     mapping (uint256 => Rule) public exitRules;
 
     // Position management
-    uint256 public lastUpdatedTimestamp;
+    uint256 public entryIndex;
     bool public inTrade;
+    uint256 public entryPrice;
+    uint256 public numberOfUpdates;
+    IPriceAggregator.Candlestick[] public candlesticks; // Used to create an aggregate candlestick based on the timeframe.
 
     // Contract management
     bool public initialized;
@@ -53,15 +59,17 @@ contract TradingBot is ITradingBot {
     uint256 public startTime;
     uint256 public createdOn;
 
-    constructor(address _owner, address _syntheticBotToken, address _botPerformanceOracle) {
+    constructor(address _owner, address _syntheticBotToken, address _priceAggregatorRouter, address _botPerformanceOracle) {
         require(_owner != address(0), "TradingBot: invalid address for owner.");
         require(_syntheticBotToken != address(0), "TradingBot: invalid address for synthetic bot token.");
+        require(_priceAggregatorRouter != address(0), "TradingBot: invalid address for price aggregator router.");
         require(_botPerformanceOracle != address(0), "TradingBot: invalid address for bot performance oracle.");
         
         // Initialize contracts.
         owner = _owner;
         syntheticBotToken = _syntheticBotToken;
         factory = msg.sender;
+        priceAggregatorRouter = IPriceAggregatorRouter(_priceAggregatorRouter);
         botPerformanceOracle = IBotPerformanceOracle(_botPerformanceOracle);
 
         initialized = false;
@@ -73,7 +81,7 @@ contract TradingBot is ITradingBot {
 
     /**
     * @dev Returns the parameters of this trading bot.
-    * @return (uint256, uint256, uint256, uint256, address) The trading bot's timeframe (in minutes), max trade duration, profit target, stop loss, and traded asset address.
+    * @return (uint256, uint256, uint256, uint256, address) The trading bot's timeframe (in candlesticks), max trade duration, profit target, stop loss, and traded asset address.
     */
     function getTradingBotParameters() external view override returns (uint256, uint256, uint256, uint256, address) {
         return (timeframe, maxTradeDuration, profitTarget, stopLoss, tradedAsset);
@@ -113,7 +121,68 @@ contract TradingBot is ITradingBot {
     * @notice This function is meant to be called once per timeframe by a Keeper contract.
     */
     function onPriceFeedUpdate() external override hasStarted hasGeneratedRules isInitialized {
-        //TODO: get price from traded asset's PriceAggregator and use it to update entry/exit rules.
+        IPriceAggregator.Candlestick memory latestPrice = IPriceAggregator(priceAggregatorRouter.getPriceAggregator(tradedAsset)).getCurrentPrice();
+
+        numberOfUpdates = numberOfUpdates.add(1);
+        candlesticks[numberOfUpdates % timeframe] = latestPrice;
+        if ((numberOfUpdates % timeframe) != timeframe.sub(1)) {
+            return;
+        }
+
+        IPriceAggregator.Candlestick memory candlestick = _createAggregateCandlestick();
+        _updateRules(candlestick);
+
+        // Bot does not have an open position.
+        if (!inTrade) {
+            // Create a 'buy' order if entry rules are met.
+            if (_checkEntryRules()) {
+                inTrade = true;
+                entryIndex = numberOfUpdates;
+                entryPrice = candlestick.close;
+
+                // Simulate a 'buy' order.
+                botPerformanceOracle.onOrderPlaced(tradedAsset, true, candlestick.close);
+            }
+        }
+        // Bot has an open position.
+        else {
+            // Check if profit target is met.
+            if (candlestick.high >= entryPrice.mul(10000 + profitTarget).div(10000)) {
+                inTrade = false;
+                entryIndex = 0;
+                entryPrice = 0;
+
+                // Simulate a 'sell' order.
+                botPerformanceOracle.onOrderPlaced(tradedAsset, false, entryPrice.mul(10000 + profitTarget).div(10000));
+            }
+            // Check if stop loss is met.
+            else if (candlestick.low <= entryPrice.mul(10000 - stopLoss).div(10000)) {
+                inTrade = false;
+                entryIndex = 0;
+                entryPrice = 0;
+
+                // Simulate a 'sell' order.
+                botPerformanceOracle.onOrderPlaced(tradedAsset, false, entryPrice.mul(10000 - stopLoss).div(10000));
+            }
+            // Check if max trade duration is met.
+            else if (numberOfUpdates >= entryIndex.add(timeframe.mul(maxTradeDuration))) {
+                inTrade = false;
+                entryIndex = 0;
+                entryPrice = 0;
+
+                // Simulate a 'sell' order.
+                botPerformanceOracle.onOrderPlaced(tradedAsset, false, candlestick.close);
+            }
+            // Check if exit rules are met.
+            else if (_checkExitRules()) {
+                inTrade = false;
+                entryIndex = 0;
+                entryPrice = 0;
+
+                // Simulate a 'sell' order.
+                botPerformanceOracle.onOrderPlaced(tradedAsset, false, candlestick.close);
+            }
+        }
     }
 
     /* ========== RESTRICTED FUNCTIONS ========== */
@@ -136,8 +205,8 @@ contract TradingBot is ITradingBot {
     * @notice This function is meant to be called by the TradingBots contract when creating a trading bot.
     * @param _mintFee Fee to charge when users mint a synthetic bot token. Denominated in 10000.
     * @param _tradeFee Fee to charge when users trade a synthetic bot token. Denominated in 10000.
-    * @param _timeframe Number of minutes for each candlestick. Must be greater than 0 and be a multiple of 5.
-    * @param _maxTradeDuration Maximum number of candlesticks a trade can last for.
+    * @param _timeframe Number of candlesticks per aggregate candlestick. Must be greater than 0.
+    * @param _maxTradeDuration Maximum number of aggregate candlesticks a trade can last for.
     * @param _profitTarget % profit target for a trade. Denominated in 10000.
     * @param _stopLoss % stop loss for a trade. Denominated in 10000.
     * @param _tradedAsset Address of the asset this bot will simulate trades for.
@@ -161,6 +230,8 @@ contract TradingBot is ITradingBot {
         tradedAsset = _tradedAsset;
 
         initialized = true;
+
+        candlesticks = new IPriceAggregator.Candlestick[](_timeframe);
 
         emit Initialized(_mintFee, _tradeFee, _timeframe, _maxTradeDuration, _profitTarget, _stopLoss, _tradedAsset);
     }
@@ -230,6 +301,32 @@ contract TradingBot is ITradingBot {
 
     /* ========== INTERNAL FUNCTIONS ========== */
 
+    /**
+    * @dev Combines stored candlesticks into one candlestick, based on the trading bot's timeframe.
+    * @return candlestick An aggregated candlestick struct.
+    */
+    function _createAggregateCandlestick() internal view returns (IPriceAggregator.Candlestick memory candlestick) {
+        {
+        // Save gas by accessing the state variable once.
+        IPriceAggregator.Candlestick[] memory data = candlesticks;
+
+        candlestick.open = data[0].open;
+        candlestick.low = data[0].low;
+
+        candlestick.close = data[data.length.sub(1)].close;
+
+        for (uint256 i = 0; i < data.length; i++) {
+            if (data[i].low < candlestick.low) {
+                candlestick.low = data[i].low;
+            }
+
+            if (data[i].high > candlestick.high) {
+                candlestick.high = data[i].high;
+            }
+        }
+        }
+    }
+
     function _generateRule(uint256 _serializedRule) internal returns (Rule memory) {
         //TODO: parse rule
         //TODO: check if bot purchased indicator/comparator
@@ -243,7 +340,7 @@ contract TradingBot is ITradingBot {
         //TODO
     }
 
-    function _updateRules(uint256 _latestPrice) internal {
+    function _updateRules(IPriceAggregator.Candlestick memory _latestPrice) internal {
         //TODO
     }
 
