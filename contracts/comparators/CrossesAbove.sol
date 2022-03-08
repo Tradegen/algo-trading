@@ -10,7 +10,7 @@ import '../interfaces/IIndicator.sol';
 // Inheritance
 import '../interfaces/IComparator.sol';
 
-contract Closes is IComparator {
+contract CrossesAbove is IComparator {
     using SafeMath for uint256;
 
     constructor() {}
@@ -22,7 +22,7 @@ contract Closes is IComparator {
     * @dev Returns the name of this comparator.
     */
     function getName() external pure override returns (string memory) {
-        return "Closes";
+        return "CrossesAbove";
     }
 
     /**
@@ -46,7 +46,7 @@ contract Closes is IComparator {
             secondIndicatorAddress: _secondIndicatorAddress,
             firstIndicatorInstance: _firstIndicatorInstance,
             secondIndicatorInstance: _secondIndicatorInstance,
-            variables: new uint256[](1)
+            variables: new uint256[](2)
         });
 
         emit AddedTradingBot(msg.sender, numberOfInstances, _firstIndicatorAddress, _secondIndicatorAddress, _firstIndicatorInstance, _secondIndicatorInstance);
@@ -57,59 +57,29 @@ contract Closes is IComparator {
     /**
     * @dev Returns whether the comparator's conditions are met for the given instance.
     * @notice This function updates the state of the given instance.
-    * @notice Variables[0] is previous price.
+    * @notice Variables[0] is first indicator previous value.
+    * @notice Variables[1] is second indicator previous value.
     * @param _instance Instance number of this comparator.
     * @return (bool) Whether the comparator's conditions are met after the latest price feed update.
     */
     function checkConditions(uint256 _instance) external override onlyTradingBot(_instance) returns (bool) {
         {
         State memory instance = instances[_instance];
-        uint256[] memory priceHistory = IIndicator(instance.firstIndicatorAddress).getValue(instance.firstIndicatorInstance);
+        uint256[] memory firstIndicatorHistory = IIndicator(instance.firstIndicatorAddress).getValue(instance.firstIndicatorInstance);
+        uint256[] memory secondIndicatorHistory = IIndicator(instance.secondIndicatorAddress).getValue(instance.secondIndicatorInstance);
 
-        if (keccak256(abi.encodePacked(IIndicator(instance.secondIndicatorAddress).getName())) == keccak256(abi.encodePacked("Up"))) {
-            if (priceHistory.length == 0) {
-                return false;
-            }
-
-            if (priceHistory.length > 1) {
-                for (uint256 i = 1; i < priceHistory.length; i++) {
-                    if (priceHistory[i] <= priceHistory[i - 1]) {
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-            else {
-                bool result = (priceHistory[0] > instance.variables[0]);
-                instances[_instance].variables[0] = priceHistory[0];
-
-                return result;
-            }
-        }
-        else if (keccak256(abi.encodePacked(IIndicator(instance.secondIndicatorAddress).getName())) == keccak256(abi.encodePacked("Down"))) {
-            if (priceHistory.length == 0) {
-                return false;
-            }
-
-            if (priceHistory.length > 1) {
-                for (uint256 i = 1; i < priceHistory.length; i++) {
-                    if (priceHistory[i] >= priceHistory[i - 1]) {
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-            else {
-                bool result = (priceHistory[0] < instance.variables[0]);
-                instances[_instance].variables[0] = priceHistory[0];
-
-                return result;
-            }
+        if (firstIndicatorHistory.length == 0 || secondIndicatorHistory.length == 0 || instance.variables[0] == 0 || instance.variables[1] == 0)
+        {
+            return false;
         }
 
-        return false;
+        bool result = (instance.variables[0] < instance.variables[1]) &&
+                    (firstIndicatorHistory[firstIndicatorHistory.length - 1] > secondIndicatorHistory[secondIndicatorHistory.length - 1]);
+
+        instances[_instance].variables[0] = firstIndicatorHistory[firstIndicatorHistory.length - 1];
+        instances[_instance].variables[1] = secondIndicatorHistory[secondIndicatorHistory.length - 1];
+
+        return result;
         }
     }
 
