@@ -17,6 +17,11 @@ interface IPriceAggregator {
     // Views
 
     /**
+     * @dev Returns the address of this PriceAggregator's asset.
+     */
+    function asset() external view returns (address);
+
+    /**
      * @dev Returns the most recent completed candlestick.
      * @notice Doesn't account for the candlestick currently forming.
      * @return (Candlestick) Latest candlestick for this asset.

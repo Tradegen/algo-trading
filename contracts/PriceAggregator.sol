@@ -18,7 +18,7 @@ contract PriceAggregator is IPriceAggregator, Ownable {
 
     // Contracts
     address public oracle;
-    address public immutable asset;
+    address public immutable override asset;
 
     // Used for tracking target time
     uint256 public lastUpdated;
