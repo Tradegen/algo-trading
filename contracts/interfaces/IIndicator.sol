@@ -9,7 +9,7 @@ interface IIndicator {
     struct State {
         address tradingBot;
         uint256 value;
-        uint256[] params;
+        uint256 params;
         uint256[] variables;
         uint256[] history;
     }
@@ -41,10 +41,12 @@ interface IIndicator {
     * @dev Creates an instance of this indicator for the contract calling this function.
     * @notice This function is meant to be called by the TradingBot contract.
     * @param _tradingBotOwner Address of the trading bot owner.
-    * @param _params An array of params to use for this indicator.
+    * @param _params A serialized array of params to use for this indicator.
+    *                The serialized array has 96 bits, consisting of 6 params with 16 bits each.
+    *                Expects left-most 160 bits to be 0.
     * @return (uint256) Instance number of the indicator.
     */
-    function addTradingBot(address _tradingBotOwner, uint256[] memory _params) external returns (uint256);
+    function addTradingBot(address _tradingBotOwner, uint256 _params) external returns (uint256);
 
     /**
     * @dev Updates the indicator's state for the given instance, based on the latest price feed update.
@@ -75,7 +77,7 @@ interface IIndicator {
     /* ========== EVENTS ========== */
 
     event Updated(uint256 indexed instance, IPriceAggregator.Candlestick latestPrice, uint256 newValue);
-    event AddedTradingBot(address indexed tradingBot, uint256 instance, uint256[] params);
+    event AddedTradingBot(address indexed tradingBot, uint256 instance, uint256 params);
     event MarkedAsDefault();
     event RegisteredUser(address user);
 }

@@ -60,14 +60,15 @@ contract HighOfLastNPriceUpdates is IIndicator {
     * @dev Creates an instance of this indicator for the contract calling this function.
     * @notice This function is meant to be called by the TradingBot contract.
     * @param _tradingBotOwner Address of the trading bot owner.
-    * @param _params An array of params to use for this indicator.
+    * @param _params A serialized array of params to use for this indicator.
+    *                The serialized array has 96 bits, consisting of 6 params with 16 bits each.
+    *                Expects left-most 160 bits to be 0.
     * @return (uint256) Instance number of the indicator.
     */
-    function addTradingBot(address _tradingBotOwner, uint256[] memory _params) external override returns (uint256) {
+    function addTradingBot(address _tradingBotOwner, uint256 _params) external override returns (uint256) {
         require(_tradingBotOwner != address(0), "Indicator: Invalid address for trading bot owner.");
         require(isDefault || canUse[_tradingBotOwner], "Indicator: Don't have permission to use this indicator.");
-        require(_params.length >= 1, "Indicator: not enough params.");
-        require(_params[0] > 1 && _params[0] <= 200, "Indicator: param out of bounds.");
+        require((_params >> 80) > 1 && (_params >> 80) <= 200, "Indicator: param out of bounds.");
 
         numberOfInstances = numberOfInstances.add(1);
         instances[numberOfInstances] = State({
@@ -92,7 +93,7 @@ contract HighOfLastNPriceUpdates is IIndicator {
     function update(uint256 _instance, IPriceAggregator.Candlestick memory _latestPrice) external override onlyTradingBot(_instance) {
         {
         State memory data = instances[_instance];
-        uint256 length = (data.history.length >= data.params[0]) ? data.params[0] : 0;
+        uint256 length = (data.history.length >= (data.params >> 80)) ? (data.params >> 80) : 0;
         uint256 high;
 
         instances[_instance].history.push(_latestPrice.high);

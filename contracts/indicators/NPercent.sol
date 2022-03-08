@@ -60,19 +60,20 @@ contract NPercent is IIndicator {
     * @dev Creates an instance of this indicator for the contract calling this function.
     * @notice This function is meant to be called by the TradingBot contract.
     * @param _tradingBotOwner Address of the trading bot owner.
-    * @param _params An array of params to use for this indicator.
+    * @param _params A serialized array of params to use for this indicator.
+    *                The serialized array has 96 bits, consisting of 6 params with 16 bits each.
+    *                Expects left-most 160 bits to be 0.
     * @return (uint256) Instance number of the indicator.
     */
-    function addTradingBot(address _tradingBotOwner, uint256[] memory _params) external override returns (uint256) {
+    function addTradingBot(address _tradingBotOwner, uint256 _params) external override returns (uint256) {
         require(_tradingBotOwner != address(0), "Indicator: Invalid address for trading bot owner.");
         require(isDefault || canUse[_tradingBotOwner], "Indicator: Don't have permission to use this indicator.");
-        require(_params.length >= 1, "Indicator: not enough params.");
-        require(_params[0] > 0, "Indicator: param must be positive.");
+        require((_params >> 80) > 0, "Indicator: param must be positive.");
 
         numberOfInstances = numberOfInstances.add(1);
         instances[numberOfInstances] = State({
             tradingBot: msg.sender,
-            value: _params[0],
+            value: _params >> 80,
             params: _params,
             variables: new uint256[](0),
             history: new uint256[](0)
