@@ -10,6 +10,7 @@ import './interfaces/IComparator.sol';
 import './interfaces/IBotPerformanceOracle.sol';
 import './interfaces/IPriceAggregatorRouter.sol';
 import './interfaces/IPriceAggregator.sol';
+import './interfaces/IComponents.sol';
 
 // Inheritance
 import './interfaces/ITradingBot.sol';
@@ -24,6 +25,7 @@ contract TradingBot is ITradingBot {
     address public override owner;
     address public immutable syntheticBotToken;
     address public immutable factory;
+    IComponents public immutable components;
     IPriceAggregatorRouter public immutable priceAggregatorRouter;
     IBotPerformanceOracle public immutable botPerformanceOracle;
 
@@ -60,15 +62,17 @@ contract TradingBot is ITradingBot {
     uint256 public createdOn;
     uint256 public lastUpdatedIndex; // Number of candlesticks in PriceAggregator when TradingBot.onPriceFeedUpdate() was last called.
 
-    constructor(address _owner, address _syntheticBotToken, address _priceAggregatorRouter, address _botPerformanceOracle) {
+    constructor(address _owner, address _syntheticBotToken, address _components, address _priceAggregatorRouter, address _botPerformanceOracle) {
         require(_owner != address(0), "TradingBot: invalid address for owner.");
         require(_syntheticBotToken != address(0), "TradingBot: invalid address for synthetic bot token.");
+        require(_components != address(0), "TradingBot: invalid address for components contract.");
         require(_priceAggregatorRouter != address(0), "TradingBot: invalid address for price aggregator router.");
         require(_botPerformanceOracle != address(0), "TradingBot: invalid address for bot performance oracle.");
         
         // Initialize contracts.
         owner = _owner;
         syntheticBotToken = _syntheticBotToken;
+        components = IComponents(_components);
         factory = msg.sender;
         priceAggregatorRouter = IPriceAggregatorRouter(_priceAggregatorRouter);
         botPerformanceOracle = IBotPerformanceOracle(_botPerformanceOracle);
@@ -338,9 +342,35 @@ contract TradingBot is ITradingBot {
         }
     }
 
-    function _generateRule(uint256 _serializedRule) internal returns (Rule memory) {
-        //TODO: parse rule
-        //TODO: check if bot purchased indicator/comparator
+    /**
+    * @dev Given a serialized rule, creates an instance of the rule's indicators/comparators.
+    * @notice Bits 0-15: empty (expected to be 0's).
+    *         Bits 16-31: Comparator ID.
+    *         Bits 32-47: First indicator ID.
+    *         Bits 48-63: Second indicator ID.
+    *         Bits 64-159: First indicator params; serialized array of 6 elements, 16 bits each.
+    *         Bits 160-255: Second indicator params; serialized array of 6 elements, 16 bits each.
+    * @param _serializedRule The info for a trading rule, packed into a uint256.
+    * @return rule A Rule struct that contains the parsed entry/exit rule. 
+    */
+    function _generateRule(uint256 _serializedRule) internal returns (Rule memory rule) {
+        {
+        address comparatorAddress = components.getComparatorAddress(_serializedRule >> 224);
+        address firstIndicatorAddress = components.getIndicatorAddress((_serializedRule >> 208) & 0xFF);
+        address secondIndicatorAddress = components.getIndicatorAddress((_serializedRule >> 192) & 0xFF);
+
+        uint256 firstIndicatorInstance = IIndicator(firstIndicatorAddress).addTradingBot(owner, (_serializedRule << 48) >> 160);
+        uint256 secondIndicatorInstance = IIndicator(secondIndicatorAddress).addTradingBot(owner, (_serializedRule << 144) >> 160);
+
+        rule = Rule({
+            firstIndicatorAddress: firstIndicatorAddress,
+            secondIndicatorAddress: secondIndicatorAddress,
+            comparatorAddress: comparatorAddress,
+            firstIndicatorInstance: firstIndicatorInstance,
+            secondIndicatorInstance: secondIndicatorInstance,
+            comparatorInstance: IComparator(comparatorAddress).addTradingBot(owner, firstIndicatorAddress, secondIndicatorAddress, firstIndicatorInstance, secondIndicatorInstance)
+        });
+        }
     }
 
     /**
