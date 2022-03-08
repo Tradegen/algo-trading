@@ -65,19 +65,19 @@ contract CrossesAbove is IComparator {
     function checkConditions(uint256 _instance) external override onlyTradingBot(_instance) returns (bool) {
         {
         State memory instance = instances[_instance];
-        uint256[] memory firstIndicatorHistory = IIndicator(instance.firstIndicatorAddress).getValue(instance.firstIndicatorInstance);
-        uint256[] memory secondIndicatorHistory = IIndicator(instance.secondIndicatorAddress).getValue(instance.secondIndicatorInstance);
+        uint256[] memory firstIndicatorValue = IIndicator(instance.firstIndicatorAddress).getValue(instance.firstIndicatorInstance);
+        uint256[] memory secondIndicatorValue = IIndicator(instance.secondIndicatorAddress).getValue(instance.secondIndicatorInstance);
 
-        if (firstIndicatorHistory.length == 0 || secondIndicatorHistory.length == 0 || instance.variables[0] == 0 || instance.variables[1] == 0)
+        if (firstIndicatorValue.length == 0 || secondIndicatorValue.length == 0 || instance.variables[0] == 0 || instance.variables[1] == 0)
         {
             return false;
         }
 
         bool result = (instance.variables[0] < instance.variables[1]) &&
-                    (firstIndicatorHistory[firstIndicatorHistory.length - 1] > secondIndicatorHistory[secondIndicatorHistory.length - 1]);
+                    (firstIndicatorValue[firstIndicatorValue.length - 1] > secondIndicatorValue[secondIndicatorValue.length - 1]);
 
-        instances[_instance].variables[0] = firstIndicatorHistory[firstIndicatorHistory.length - 1];
-        instances[_instance].variables[1] = secondIndicatorHistory[secondIndicatorHistory.length - 1];
+        instances[_instance].variables[0] = firstIndicatorValue[firstIndicatorValue.length - 1];
+        instances[_instance].variables[1] = secondIndicatorValue[secondIndicatorValue.length - 1];
 
         return result;
         }

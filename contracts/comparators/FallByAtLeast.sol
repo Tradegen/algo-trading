@@ -10,7 +10,7 @@ import '../interfaces/IIndicator.sol';
 // Inheritance
 import '../interfaces/IComparator.sol';
 
-contract CrossesBelow is IComparator {
+contract FallByAtLeast is IComparator {
     using SafeMath for uint256;
 
     constructor() {}
@@ -22,7 +22,7 @@ contract CrossesBelow is IComparator {
     * @dev Returns the name of this comparator.
     */
     function getName() external pure override returns (string memory) {
-        return "CrossesBelow";
+        return "FallByAtLeast";
     }
 
     /**
@@ -46,7 +46,7 @@ contract CrossesBelow is IComparator {
             secondIndicatorAddress: _secondIndicatorAddress,
             firstIndicatorInstance: _firstIndicatorInstance,
             secondIndicatorInstance: _secondIndicatorInstance,
-            variables: new uint256[](2)
+            variables: new uint256[](0)
         });
 
         emit AddedTradingBot(msg.sender, numberOfInstances, _firstIndicatorAddress, _secondIndicatorAddress, _firstIndicatorInstance, _secondIndicatorInstance);
@@ -57,29 +57,28 @@ contract CrossesBelow is IComparator {
     /**
     * @dev Returns whether the comparator's conditions are met for the given instance.
     * @notice This function updates the state of the given instance.
-    * @notice Variables[0] is first indicator previous value.
-    * @notice Variables[1] is second indicator previous value.
     * @param _instance Instance number of this comparator.
     * @return (bool) Whether the comparator's conditions are met after the latest price feed update.
     */
     function checkConditions(uint256 _instance) external override onlyTradingBot(_instance) returns (bool) {
         {
         State memory instance = instances[_instance];
-        uint256[] memory firstIndicatorValue = IIndicator(instance.firstIndicatorAddress).getValue(instance.firstIndicatorInstance);
+        uint256[] memory firstIndicatorValues = IIndicator(instance.firstIndicatorAddress).getValue(instance.firstIndicatorInstance);
         uint256[] memory secondIndicatorValue = IIndicator(instance.secondIndicatorAddress).getValue(instance.secondIndicatorInstance);
 
-        if (firstIndicatorValue.length == 0 || secondIndicatorValue.length == 0 || instance.variables[0] == 0 || instance.variables[1] == 0)
+        if (firstIndicatorValues.length < 2)
         {
             return false;
         }
 
-        bool result = (instance.variables[0] > instance.variables[1]) &&
-                    (firstIndicatorValue[firstIndicatorValue.length - 1] < secondIndicatorValue[secondIndicatorValue.length - 1]);
+        // Check if indicator rose in value
+        if (firstIndicatorValues[firstIndicatorValues.length - 1] >= firstIndicatorValues[0])
+        {
+            return false;
+        }
 
-        instances[_instance].variables[0] = firstIndicatorValue[firstIndicatorValue.length - 1];
-        instances[_instance].variables[1] = secondIndicatorValue[secondIndicatorValue.length - 1];
-
-        return result;
+        uint256 percentFall = (firstIndicatorValues[0].sub(firstIndicatorValues[firstIndicatorValues.length - 1]).mul(1e18).mul(100).div(firstIndicatorValues[0]));
+        return (percentFall >= secondIndicatorValue[0]);
         }
     }
 
