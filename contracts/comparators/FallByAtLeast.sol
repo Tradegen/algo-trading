@@ -134,13 +134,13 @@ contract FallByAtLeast is IComparator {
 
     modifier onlyComponentsContract() {
         require(msg.sender == componentsAddress,
-                "Indicator: Only the Components contract can call this function.");
+                "Comparator: Only the Components contract can call this function.");
         _;
     }
 
     modifier isNotDefault() {
         require(!isDefault,
-                "Indicator: Indicator needs to be non-default to call this function.");
+                "Comparator: Indicator needs to be non-default to call this function.");
         _;
     }
 }

@@ -64,6 +64,7 @@ contract NPercent is IIndicator {
     * @return (uint256) Instance number of the indicator.
     */
     function addTradingBot(address _tradingBotOwner, uint256[] memory _params) external override returns (uint256) {
+        require(_tradingBotOwner != address(0), "Indicator: Invalid address for trading bot owner.");
         require(isDefault || canUse[_tradingBotOwner], "Indicator: Don't have permission to use this indicator.");
         require(_params.length >= 1, "Indicator: not enough params.");
         require(_params[0] > 0, "Indicator: param must be positive.");
