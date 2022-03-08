@@ -58,6 +58,7 @@ contract TradingBot is ITradingBot {
     bool public generatedRules;
     uint256 public startTime;
     uint256 public createdOn;
+    uint256 public lastUpdatedIndex; // Number of candlesticks in PriceAggregator when TradingBot.onPriceFeedUpdate() was last called.
 
     constructor(address _owner, address _syntheticBotToken, address _priceAggregatorRouter, address _botPerformanceOracle) {
         require(_owner != address(0), "TradingBot: invalid address for owner.");
@@ -78,6 +79,14 @@ contract TradingBot is ITradingBot {
     }
 
     /* ========== VIEWS ========== */
+
+    /**
+     * @dev Returns whether onPriceFeedUpdate() can be called.
+     * @notice Checks if the PriceAggregator contract created a new candlestick.
+     */
+    function canBeUpdated() public view override returns (bool) {
+        return IPriceAggregator(priceAggregatorRouter.getPriceAggregator(tradedAsset)).numberOfCandlesticks() > lastUpdatedIndex;
+    }
 
     /**
     * @dev Returns the parameters of this trading bot.
@@ -121,6 +130,8 @@ contract TradingBot is ITradingBot {
     * @notice This function is meant to be called once per timeframe by a Keeper contract.
     */
     function onPriceFeedUpdate() external override hasStarted hasGeneratedRules isInitialized {
+        require(canBeUpdated(), "TradingBot: need to wait for a new candlestick before updating.");
+        
         IPriceAggregator.Candlestick memory latestPrice = IPriceAggregator(priceAggregatorRouter.getPriceAggregator(tradedAsset)).getCurrentPrice();
 
         numberOfUpdates = numberOfUpdates.add(1);
@@ -341,7 +352,20 @@ contract TradingBot is ITradingBot {
     }
 
     function _updateRules(IPriceAggregator.Candlestick memory _latestPrice) internal {
-        //TODO
+        {
+        uint256 numEntryRules = numberOfEntryRules;
+        uint256 numExitRules = numberOfExitRules;
+
+        for (uint256 i = 0; i < numEntryRules; i++) {
+            IIndicator(entryRules[i].firstIndicatorAddress).update(entryRules[i].firstIndicatorInstance, _latestPrice);
+            IIndicator(entryRules[i].secondIndicatorAddress).update(entryRules[i].secondIndicatorInstance, _latestPrice);
+        }
+
+        for (uint256 i = 0; i < numExitRules; i++) {
+            IIndicator(exitRules[i].firstIndicatorAddress).update(exitRules[i].firstIndicatorInstance, _latestPrice);
+            IIndicator(exitRules[i].secondIndicatorAddress).update(exitRules[i].secondIndicatorInstance, _latestPrice);
+        }
+        }
     }
 
     /* ========== MODIFIERS ========== */

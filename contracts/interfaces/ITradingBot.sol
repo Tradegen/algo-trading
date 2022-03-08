@@ -24,6 +24,12 @@ interface ITradingBot {
     // Views
 
     /**
+     * @dev Returns whether onPriceFeedUpdate() can be called.
+     * @notice Checks if the PriceAggregator contract created a new candlestick.
+     */
+    function canBeUpdated() external view returns (bool);
+
+    /**
      * @dev Returns the fee (denominated in 10000) for minting the bot's token.
      */
     function tokenMintFee() external view returns (uint256);

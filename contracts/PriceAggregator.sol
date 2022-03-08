@@ -24,7 +24,7 @@ contract PriceAggregator is IPriceAggregator, Ownable {
     uint256 public lastUpdated;
 
     // Historical data
-    uint256 public numberOfCandlesticks;
+    uint256 public override numberOfCandlesticks;
     mapping (uint256 => Candlestick) public prices; // Starts at index 0.
 
     // Pending data

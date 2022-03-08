@@ -22,6 +22,11 @@ interface IPriceAggregator {
     function asset() external view returns (address);
 
     /**
+     * @dev Returns the number of candlesticks that have been created.
+     */
+    function numberOfCandlesticks() external view returns (uint256);
+
+    /**
      * @dev Returns the most recent completed candlestick.
      * @notice Doesn't account for the candlestick currently forming.
      * @return (Candlestick) Latest candlestick for this asset.
