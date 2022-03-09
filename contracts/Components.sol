@@ -157,7 +157,17 @@ contract Components is IComponents, ERC1155, Ownable {
      * @param _indicatorID ID of the indicator.
      */
     function markIndicatorAsDefault(uint256 _indicatorID) external override {
-        //TODO
+        address indicatorAddress = indicators[_indicatorID];
+
+        require(msg.sender == components[indicatorAddress].owner, "Components: only the indicator owner can call this function.");
+        require(!isDefaultComponent[indicatorAddress], "Components: already marked as default.");
+
+        isDefaultComponent[indicatorAddress] = true;
+        components[indicatorAddress].isDefault = true;
+
+        IIndicator(indicatorAddress).markAsDefault();
+
+        emit MarkedIndicatorAsDefault(indicatorAddress);
     }
 
     /**
@@ -166,7 +176,17 @@ contract Components is IComponents, ERC1155, Ownable {
      * @param _comparatorID ID of the comparator.
      */
     function markComparatorAsDefault(uint256 _comparatorID) external override {
-        //TODO
+        address comparatorAddress = comparators[_comparatorID];
+
+        require(msg.sender == components[comparatorAddress].owner, "Components: only the comparator owner can call this function.");
+        require(!isDefaultComponent[comparatorAddress], "Components: already marked as default.");
+
+        isDefaultComponent[comparatorAddress] = true;
+        components[comparatorAddress].isDefault = true;
+
+        IComparator(comparatorAddress).markAsDefault();
+
+        emit MarkedComparatorAsDefault(comparatorAddress);
     }
 
     /* ========== RESTRICTED FUNCTIONS ========== */
@@ -193,4 +213,6 @@ contract Components is IComponents, ERC1155, Ownable {
     event PurchasedComparator(address indexed user, address comparator);
     event PublishedIndicator(address indicator, address owner, bool isDefault, uint256 price);
     event PublishedComparator(address comparator, address owner, bool isDefault, uint256 price);
+    event MarkedIndicatorAsDefault(address indicator);
+    event MarkedComparatorAsDefault(address comparator);
 }
