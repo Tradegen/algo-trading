@@ -269,6 +269,15 @@ contract Components is IComponents, ERC1155, Ownable {
         emit PublishedIndicator(_indicator, _owner, _isDefault, _price);
     }
 
+    /**
+     * @dev Publishes the comparator to the platform.
+     * @notice This function can only be called by the deployer of this contract.
+     * @notice Assumes the comparator contract has already been deployed and has the same 'isDefault' status.
+     * @param _comparator Address of the comparator.
+     * @param _owner Address of the comparator's owner.
+     * @param _isDefault Whether the comparator is a default comparator.
+     * @param _price Price (in TGEN) for an instance of this comparator.
+     */
     function publishComparator(address _comparator, address _owner, bool _isDefault, uint256 _price) external onlyOwner {
         require(_comparator != address(0), "Components: invalid address for comparator.");
         require(_owner != address(0), "Components: invalid address for owner.");
