@@ -30,9 +30,11 @@ contract Components is IComponents, ERC1155, Ownable {
     mapping(address => Component) public components;
 
     // Indicator ID => indicator address.
+    // Starts at index 0.
     mapping(uint256 => address) public indicators;
 
     // Comparator ID => comparator address.
+    // Starts at index 0.
     mapping(uint256 => address) public comparators;
 
     // Indicator/comparator address => bool.
@@ -40,6 +42,9 @@ contract Components is IComponents, ERC1155, Ownable {
 
     // User address => indicator/comparator address => bool.
     mapping(address => mapping(address => bool)) public hasPurchasedComponent; 
+
+    // Token ID => indicator/comparator address.
+    mapping(uint256 => address) public tokenIDs;
 
     constructor(address _TGEN, address _xTGEN) Ownable() {
         require(_TGEN != address(0), "Components: invalid address for TGEN.");
@@ -189,14 +194,68 @@ contract Components is IComponents, ERC1155, Ownable {
         emit MarkedComparatorAsDefault(comparatorAddress);
     }
 
+    /**
+    * @dev Transfers tokens from seller to buyer.
+    * @param from Address of the seller.
+    * @param to Address of the buyer.
+    * @param id The token ID of the indicator/comparator.
+    * @param amount Number of tokens to transfer for the given ID. Expected to equal 1.
+    * @param data Bytes data.
+    */
+    function safeTransferFrom(address from, address to, uint id, uint amount, bytes memory data) public override {
+        require(
+            from == _msgSender() || isApprovedForAll(from, _msgSender()),
+            "Components: caller is not owner nor approved."
+        );
+        require(amount == 1, "Components: amount must be 1.");
+        require(from == components[tokenIDs[id]].owner, "Components: only the NFT owner can transfer.");
+
+        // Update ownership data.
+        components[tokenIDs[id]].owner = to;
+        hasPurchasedComponent[to][tokenIDs[id]] = true;
+
+        _safeTransferFrom(from, to, id, amount, data);
+    }
+
+    // Prevent transfer of multiple NFTs in one transaction.
+    function safeBatchTransferFrom(address from, address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data) public override {}
+
     /* ========== RESTRICTED FUNCTIONS ========== */
 
+    /**
+     * @dev Publishes the indicator to the platform.
+     * @notice This function can only be called by the deployer of this contract.
+     * @notice Assumes the indicator contract has already been deployed and has the same 'isDefault' status.
+     * @param _indicator Address of the indicator.
+     * @param _owner Address of the indicator's owner.
+     * @param _isDefault Whether the indicator is a default indicator.
+     * @param _price Price (in TGEN) for an instance of this indicator.
+     */
     function publishIndicator(address _indicator, address _owner, bool _isDefault, uint256 _price) external onlyOwner {
         require(_indicator != address(0), "Components: invalid address for indicator.");
         require(_owner != address(0), "Components: invalid address for owner.");
         require(_price >= 0, "Components: price must be positive.");
 
-        //TODO
+        if (_isDefault) {
+            isDefaultComponent[_indicator] = true;
+        }
+
+        hasPurchasedComponent[_owner][_indicator] = true;
+        indicators[numberOfIndicators] = _indicator;
+        tokenIDs[numberOfIndicators.add(numberOfComparators)] = _indicator;
+        components[_indicator] = Component({
+            componentAddress: _indicator,
+            owner: _owner,
+            tokenID: numberOfIndicators.add(numberOfComparators),
+            isIndicator: true,
+            isDefault: _isDefault,
+            price: _price
+        });
+
+        _mint(_owner, numberOfIndicators.add(numberOfComparators), 1, "");
+        numberOfIndicators = numberOfIndicators.add(1);
+
+        emit PublishedIndicator(_indicator, _owner, _isDefault, _price);
     }
 
     function publishComparator(address _comparator, address _owner, bool _isDefault, uint256 _price) external onlyOwner {
@@ -204,7 +263,26 @@ contract Components is IComponents, ERC1155, Ownable {
         require(_owner != address(0), "Components: invalid address for owner.");
         require(_price >= 0, "Components: price must be positive.");
 
-        //TODO
+        if (_isDefault) {
+            isDefaultComponent[_comparator] = true;
+        }
+
+        hasPurchasedComponent[_owner][_comparator] = true;
+        comparators[numberOfComparators] = _comparator;
+        tokenIDs[numberOfComparators.add(numberOfIndicators)] = _comparator;
+        components[_comparator] = Component({
+            componentAddress: _comparator,
+            owner: _owner,
+            tokenID: numberOfComparators.add(numberOfIndicators),
+            isIndicator: false,
+            isDefault: _isDefault,
+            price: _price
+        });
+
+        _mint(_owner, numberOfComparators.add(numberOfIndicators), 1, "");
+        numberOfComparators = numberOfComparators.add(1);
+
+        emit PublishedComparator(_comparator, _owner, _isDefault, _price);
     }
 
     /* ========== EVENTS ========== */
