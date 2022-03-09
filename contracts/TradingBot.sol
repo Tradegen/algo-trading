@@ -323,7 +323,6 @@ contract TradingBot is ITradingBot {
     * @return rule A Rule struct that contains the parsed entry/exit rule. 
     */
     function _generateRule(uint256 _serializedRule) internal returns (Rule memory rule) {
-        {
         address comparatorAddress = components.getComparatorAddress(_serializedRule >> 224);
         address firstIndicatorAddress = components.getIndicatorAddress((_serializedRule >> 208) & 0xFF);
         address secondIndicatorAddress = components.getIndicatorAddress((_serializedRule >> 192) & 0xFF);
@@ -339,14 +338,12 @@ contract TradingBot is ITradingBot {
             secondIndicatorInstance: secondIndicatorInstance,
             comparatorInstance: IComparator(comparatorAddress).addTradingBot(owner, firstIndicatorAddress, secondIndicatorAddress, firstIndicatorInstance, secondIndicatorInstance)
         });
-        }
     }
 
     /**
     * @dev Returns whether all entry rules are met.
     */
     function _checkEntryRules() internal returns (bool) {
-        {
         uint256 numEntryRules = numberOfEntryRules;
 
         for (uint256 i = 0; i < numEntryRules; i++) {
@@ -354,7 +351,6 @@ contract TradingBot is ITradingBot {
             {
                 return false;
             }
-        }
         }
 
         return true;
@@ -364,7 +360,6 @@ contract TradingBot is ITradingBot {
     * @dev Returns whether at least one exit rule is met.
     */
     function _checkExitRules() internal returns (bool) {
-        {
         uint256 numExitRules = numberOfExitRules;
 
         for (uint256 i = 0; i < numExitRules; i++) {
@@ -372,7 +367,6 @@ contract TradingBot is ITradingBot {
             {
                 return true;
             }
-        }
         }
 
         return false;
