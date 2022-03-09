@@ -26,6 +26,7 @@ contract Components is IComponents, ERC1155, Ownable {
 
     IERC20 public immutable TGEN;
     address public immutable xTGEN;
+    address public immutable marketplace;
 
     uint256 numberOfIndicators;
     uint256 numberOfComparators;
@@ -50,12 +51,14 @@ contract Components is IComponents, ERC1155, Ownable {
     // Token ID => indicator/comparator address.
     mapping(uint256 => address) public tokenIDs;
 
-    constructor(address _TGEN, address _xTGEN) Ownable() {
+    constructor(address _TGEN, address _xTGEN, address _marketplace) Ownable() {
         require(_TGEN != address(0), "Components: invalid address for TGEN.");
         require(_xTGEN != address(0), "Components: invalid address for xTGEN.");
+        require(_marketplace != address(0), "Components: invalid address for marketplace.");
 
         TGEN = IERC20(_TGEN);
         xTGEN = _xTGEN;
+        marketplace = _marketplace;
     }
 
     /* ========== VIEWS ========== */
@@ -128,12 +131,14 @@ contract Components is IComponents, ERC1155, Ownable {
         require(!hasPurchasedIndicator(msg.sender, _indicatorID), "Components: already purchased this indicator.");
 
         address indicatorAddress = indicators[_indicatorID];
+        // Transfer to xTGEN if NFT is in marketplace escrow.
+        address recipient = (components[indicatorAddress].owner == marketplace) ? marketplace : components[indicatorAddress].owner;
 
         hasPurchasedComponent[msg.sender][indicatorAddress] = true;
 
         TGEN.safeTransferFrom(msg.sender, address(this), components[indicatorAddress].price);
         TGEN.safeTransfer(xTGEN, components[indicatorAddress].price.mul(protocolFee).div(10000));
-        TGEN.safeTransfer(components[indicatorAddress].owner, components[indicatorAddress].price.mul(10000 - protocolFee).div(10000));
+        TGEN.safeTransfer(recipient, components[indicatorAddress].price.mul(10000 - protocolFee).div(10000));
 
         IIndicator(indicatorAddress).registerUser(msg.sender);
 
@@ -148,12 +153,14 @@ contract Components is IComponents, ERC1155, Ownable {
         require(!hasPurchasedComparator(msg.sender, _comparatorID), "Components: already purchased this comparator.");
 
         address comparatorAddress = indicators[_comparatorID];
+        // Transfer to xTGEN if NFT is in marketplace escrow.
+        address recipient = (components[comparatorAddress].owner == marketplace) ? marketplace : components[comparatorAddress].owner;
 
         hasPurchasedComponent[msg.sender][comparatorAddress] = true;
 
         TGEN.safeTransferFrom(msg.sender, address(this), components[comparatorAddress].price);
         TGEN.safeTransfer(xTGEN, components[comparatorAddress].price.mul(protocolFee).div(10000));
-        TGEN.safeTransfer(components[comparatorAddress].owner, components[comparatorAddress].price.mul(10000 - protocolFee).div(10000));
+        TGEN.safeTransfer(recipient, components[comparatorAddress].price.mul(10000 - protocolFee).div(10000));
 
         IComparator(comparatorAddress).registerUser(msg.sender);
 
