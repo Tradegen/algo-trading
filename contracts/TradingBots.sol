@@ -16,6 +16,24 @@ import './interfaces/IExternalContractFactory.sol';
 contract TradingBots is ERC1155 {
     using SafeMath for uint256;
 
+    struct TradingBotInfo {
+        address owner;
+        bool created;
+        bool initialized;
+        bool generatedRules;
+        string name;
+        string symbol;
+        uint256 mintFee;
+        uint256 tradeFee;
+        uint256 timeframe;
+        uint256 maxTradeDuration;
+        uint256 profitTarget;
+        uint256 stopLoss;
+        address tradedAsset;
+        uint256[] serializedEntryRules;
+        uint256[] serializedExitRules;
+    }
+
     address public immutable priceAggregatorRouter;
     address public immutable components;
     IExternalContractFactory public immutable externalContractFactory;
@@ -23,6 +41,7 @@ contract TradingBots is ERC1155 {
     uint256 public numberOfTradingBots;
     // Token ID => trading bot address.
     mapping (uint256 => address) public tradingBots;
+    mapping (uint256 => TradingBotInfo) public tradingBotInfos;
 
     constructor(address _priceAggregatorRouter, address _components, address _externalContractFactory) {
         priceAggregatorRouter = _priceAggregatorRouter;
@@ -33,7 +52,9 @@ contract TradingBots is ERC1155 {
     /* ========== MUTATIVE FUNCTIONS ========== */
 
     /**
-     * @dev Creates a trading bot and initializes it.
+     * @dev Stores the trading bot parameters in a struct before creating the bot.
+     * @notice First step.
+     * @notice Use 4 steps to create/initialize bot to avoid 'stack-too-deep' error.
      * @param _name Name of the trading bot.
      * @param _symbol Symbol of the trading bot.
      * @param _mintFee Fee to charge when users mint a synthetic bot token. Denominated in 10000.
@@ -44,7 +65,7 @@ contract TradingBots is ERC1155 {
      * @param _stopLoss % stop loss for a trade. Denominated in 10000.
      * @param _tradedAsset Address of the asset this bot will simulate trades for.
      */
-    function createTradingBot(string memory _name, string memory _symbol, uint256 _mintFee, uint256 _tradeFee, uint256 _timeframe, uint256 _maxTradeDuration, uint256 _profitTarget, uint256 _stopLoss, address _tradedAsset, uint256[] memory _serializedEntryRules, uint256[] memory _serializedExitRules) external {
+    function stageTradingBot(string memory _name, string memory _symbol, uint256 _mintFee, uint256 _tradeFee, uint256 _timeframe, uint256 _maxTradeDuration, uint256 _profitTarget, uint256 _stopLoss, address _tradedAsset, uint256[] memory _serializedEntryRules, uint256[] memory _serializedExitRules) external {
         require(_timeframe > 0, "TradingBots: timeframe must be above 0.");
         require(_maxTradeDuration > 0, "TradingBots: max trade duration must be above 0.");
         require(_profitTarget > 0, "TradingBots: profit target must be above 0.");
@@ -53,16 +74,87 @@ contract TradingBots is ERC1155 {
         require(_tradedAsset != address(0), "TradingBots: invalid address for traded asset.");
         require(_serializedEntryRules.length > 0, "TradingBots: must have at least 1 entry rule.");
 
-        (address botPerformanceOracleAddress, address syntheticBotTokenAddress) = externalContractFactory.createContracts();
-        address tradingBotAddress = address(new TradingBot(msg.sender, syntheticBotTokenAddress, components, priceAggregatorRouter, botPerformanceOracleAddress));
-        ITradingBot(tradingBotAddress).initialize(_name, _symbol, _mintFee, _tradeFee, _timeframe, _maxTradeDuration, _profitTarget, _stopLoss, _tradedAsset);
-        ITradingBot(tradingBotAddress).generateRules(_serializedEntryRules, _serializedExitRules);
+        tradingBotInfos[numberOfTradingBots] = TradingBotInfo({
+            owner: msg.sender,
+            created: false,
+            initialized: false,
+            generatedRules: false,
+            name: _name,
+            symbol: _symbol,
+            mintFee: _mintFee,
+            tradeFee: _tradeFee,
+            timeframe: _timeframe,
+            maxTradeDuration: _maxTradeDuration,
+            profitTarget: _profitTarget,
+            stopLoss: _stopLoss,
+            tradedAsset: _tradedAsset,
+            serializedEntryRules: _serializedEntryRules,
+            serializedExitRules: _serializedExitRules
+        });
 
-        tradingBots[numberOfTradingBots] = tradingBotAddress;
         _mint(msg.sender, numberOfTradingBots, 1, "");
         numberOfTradingBots = numberOfTradingBots.add(1);
 
-        emit CreatedTradingBot(_mintFee, _tradeFee, _timeframe, _maxTradeDuration, _profitTarget, _stopLoss, _tradedAsset, _serializedEntryRules, _serializedExitRules);
+        emit StagedTradingBot(msg.sender, _mintFee, _tradeFee, _timeframe, _maxTradeDuration, _profitTarget, _stopLoss, _tradedAsset, _serializedEntryRules, _serializedExitRules);
+    }
+
+    /**
+     * @dev Creates the trading bot contract.
+     * @notice Second step.
+     * @notice Use 4 steps to create/initialize bot to avoid 'stack-too-deep' error.
+     * @param _tokenID NFT ID of the trading bot.
+     */
+    function createTradingBot(uint256 _tokenID) external {
+        require(msg.sender == tradingBotInfos[_tokenID].owner, "TradingBots: only the trading bot owner can call this function.");
+        require(!tradingBotInfos[_tokenID].created, "TradingBots: trading bot already created.");
+
+        (address botPerformanceOracleAddress, address syntheticBotTokenAddress) = externalContractFactory.createContracts();
+
+        tradingBots[_tokenID] = address(new TradingBot(msg.sender, syntheticBotTokenAddress, components, priceAggregatorRouter, botPerformanceOracleAddress));
+        tradingBotInfos[_tokenID].created = true;
+
+        emit CreatedTradingBot(tradingBots[_tokenID]);
+    }
+
+    /**
+     * @dev Initializes the trading bot contract.
+     * @notice Third step.
+     * @notice Use 4 steps to create/initialize bot to avoid 'stack-too-deep' error.
+     * @param _tokenID NFT ID of the trading bot.
+     */
+    function initializeTradingBot(uint256 _tokenID) external {
+        TradingBotInfo memory info = tradingBotInfos[_tokenID];
+
+        require(msg.sender == info.owner, "TradingBots: only the trading bot owner can call this function.");
+        require(info.created, "TradingBots: trading bot contract needs to be created first.");
+        require(!info.initialized, "TradingBots: trading bot already initialized.");
+
+        ITradingBot(tradingBots[_tokenID]).initialize(info.name, info.symbol, info.mintFee, info.tradeFee, info.timeframe, info.maxTradeDuration, info.profitTarget, info.stopLoss, info.tradedAsset);
+
+        tradingBotInfos[_tokenID].initialized = true;
+
+        emit InitializedTradingBot(tradingBots[_tokenID]);
+    }
+
+    /**
+     * @dev Generates entry/exit rules for the trading bot contract.
+     * @notice Last step.
+     * @notice Use 4 steps to create/initialize bot to avoid 'stack-too-deep' error.
+     * @param _tokenID NFT ID of the trading bot.
+     */
+    function generateRulesForTradingBot(uint256 _tokenID) external {
+        TradingBotInfo memory info = tradingBotInfos[_tokenID];
+
+        require(msg.sender == info.owner, "TradingBots: only the trading bot owner can call this function.");
+        require(info.created, "TradingBots: trading bot contract needs to be created first.");
+        require(info.initialized, "TradingBots: trading bot contract needs to be initialized first.");
+        require(!info.generatedRules, "TradingBots: trading bot already generated rules.");
+
+        ITradingBot(tradingBots[_tokenID]).generateRules(info.serializedEntryRules, info.serializedExitRules);
+
+        tradingBotInfos[_tokenID].generatedRules = true;
+
+        emit GeneratedRulesForTradingBot(tradingBots[_tokenID]);
     }
 
     /**
@@ -109,6 +201,9 @@ contract TradingBots is ERC1155 {
 
     /* ========== EVENTS ========== */
 
-    event CreatedTradingBot(uint256 mintFee, uint256 tradeFee, uint256 timeframe, uint256 maxTradeDuration, uint256 profitTarget, uint256 stopLoss, address tradedAsset, uint256[] serializedEntryRules, uint256[] serializedExitRules);
+    event StagedTradingBot(address owner, uint256 mintFee, uint256 tradeFee, uint256 timeframe, uint256 maxTradeDuration, uint256 profitTarget, uint256 stopLoss, address tradedAsset, uint256[] serializedEntryRules, uint256[] serializedExitRules);
+    event CreatedTradingBot(address tradingBot);
+    event InitializedTradingBot(address tradingBot);
+    event GeneratedRulesForTradingBot(address tradingBot);
     event UpdatedOwner(uint256 tradingBotID, address newOwner);
 }
