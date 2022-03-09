@@ -18,7 +18,11 @@ contract Components is IComponents, ERC1155, Ownable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    uint256 public constant PROTOCOL_FEE = 500; // 5%, denominated in 10000.
+    // Max fee of 10%.
+    uint256 public constant MAX_PROTOCOL_FEE = 1000; 
+
+    // 5%, denominated in 10000.
+    uint256 public protocolFee = 500; 
 
     IERC20 public immutable TGEN;
     address public immutable xTGEN;
@@ -128,8 +132,8 @@ contract Components is IComponents, ERC1155, Ownable {
         hasPurchasedComponent[msg.sender][indicatorAddress] = true;
 
         TGEN.safeTransferFrom(msg.sender, address(this), components[indicatorAddress].price);
-        TGEN.safeTransfer(xTGEN, components[indicatorAddress].price.mul(PROTOCOL_FEE).div(10000));
-        TGEN.safeTransfer(components[indicatorAddress].owner, components[indicatorAddress].price.mul(10000 - PROTOCOL_FEE).div(10000));
+        TGEN.safeTransfer(xTGEN, components[indicatorAddress].price.mul(protocolFee).div(10000));
+        TGEN.safeTransfer(components[indicatorAddress].owner, components[indicatorAddress].price.mul(10000 - protocolFee).div(10000));
 
         IIndicator(indicatorAddress).registerUser(msg.sender);
 
@@ -148,8 +152,8 @@ contract Components is IComponents, ERC1155, Ownable {
         hasPurchasedComponent[msg.sender][comparatorAddress] = true;
 
         TGEN.safeTransferFrom(msg.sender, address(this), components[comparatorAddress].price);
-        TGEN.safeTransfer(xTGEN, components[comparatorAddress].price.mul(PROTOCOL_FEE).div(10000));
-        TGEN.safeTransfer(components[comparatorAddress].owner, components[comparatorAddress].price.mul(10000 - PROTOCOL_FEE).div(10000));
+        TGEN.safeTransfer(xTGEN, components[comparatorAddress].price.mul(protocolFee).div(10000));
+        TGEN.safeTransfer(components[comparatorAddress].owner, components[comparatorAddress].price.mul(10000 - protocolFee).div(10000));
 
         IComparator(comparatorAddress).registerUser(msg.sender);
 
@@ -285,6 +289,20 @@ contract Components is IComponents, ERC1155, Ownable {
         emit PublishedComparator(_comparator, _owner, _isDefault, _price);
     }
 
+    /**
+    * @dev Updates the protocol fee.
+    * @notice This function is meant to be called by the contract deployer.
+    * @param _newFee The new protocol fee.
+    */
+    function setProtocolFee(uint256 _newFee) external onlyOwner {
+        require(_newFee >= 0, "Components: new fee must be positive.");
+        require(_newFee <= MAX_PROTOCOL_FEE, "Components: new fee is too high.");
+
+        protocolFee = _newFee;
+
+        emit UpdatedProtocolFee(_newFee);
+    }
+
     /* ========== EVENTS ========== */
 
     event PurchasedIndicator(address indexed user, address indicator);
@@ -293,4 +311,5 @@ contract Components is IComponents, ERC1155, Ownable {
     event PublishedComparator(address comparator, address owner, bool isDefault, uint256 price);
     event MarkedIndicatorAsDefault(address indicator);
     event MarkedComparatorAsDefault(address comparator);
+    event UpdatedProtocolFee(uint256 newFee);
 }
