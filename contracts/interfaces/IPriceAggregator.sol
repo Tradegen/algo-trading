@@ -39,6 +39,11 @@ interface IPriceAggregator {
      */
     function getPriceAt(uint256 _index) external view returns (CandlestickUtils.Candlestick memory);
 
+    /**
+     * @dev Returns the latest price from the asset's price feed.
+     */
+    function latestRawPrice() external view returns (uint256);
+
     // Mutative
 
     /**

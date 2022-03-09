@@ -17,18 +17,21 @@ contract PriceAggregator is IPriceAggregator, Ownable {
 
     uint256 public constant TARGET_TIME_BETWEEN_UPDATES = 30 seconds;
 
-    // Contracts
+    // Contracts.
     address public oracle;
     address public immutable override asset;
 
-    // Used for tracking target time
+    // Used for tracking target time.
     uint256 public lastUpdated;
 
-    // Historical data
+    // Latest price from the asset's price feed.
+    uint256 public override latestRawPrice;
+
+    // Historical data.
     uint256 public override numberOfCandlesticks;
     mapping (uint256 => CandlestickUtils.Candlestick) public prices; // Starts at index 0.
 
-    // Pending data
+    // Pending data.
     uint256 public numberOfUpdates;
     CandlestickUtils.Candlestick public currentCandlestick;
 
@@ -87,6 +90,8 @@ contract PriceAggregator is IPriceAggregator, Ownable {
         if (block.timestamp.sub(lastUpdated) < TARGET_TIME_BETWEEN_UPDATES) {
             return;
         }
+
+        latestRawPrice = _latestPrice;
 
         // Check if this is the first update.
         if (numberOfUpdates == 0) {
