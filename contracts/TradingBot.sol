@@ -185,17 +185,8 @@ contract TradingBot is ITradingBot {
                 // Simulate a 'sell' order.
                 botPerformanceOracle.onOrderPlaced(tradedAsset, false, entryPrice.mul(10000 - stopLoss).div(10000));
             }
-            // Check if max trade duration is met.
-            else if (numberOfUpdates >= entryIndex.add(timeframe.mul(maxTradeDuration))) {
-                inTrade = false;
-                entryIndex = 0;
-                entryPrice = 0;
-
-                // Simulate a 'sell' order.
-                botPerformanceOracle.onOrderPlaced(tradedAsset, false, candlestick.close);
-            }
-            // Check if exit rules are met.
-            else if (_checkExitRules()) {
+            // Check if max trade duration is met or exit rules are met.
+            else if (numberOfUpdates >= entryIndex.add(timeframe.mul(maxTradeDuration)) || _checkExitRules()) {
                 inTrade = false;
                 entryIndex = 0;
                 entryPrice = 0;

@@ -74,7 +74,6 @@ contract FallByAtMost is IComparator {
     * @return (bool) Whether the comparator's conditions are met after the latest price feed update.
     */
     function checkConditions(uint256 _instance) external override onlyTradingBot(_instance) returns (bool) {
-        {
         State memory instance = instances[_instance];
         uint256[] memory firstIndicatorValues = IIndicator(instance.firstIndicatorAddress).getValue(instance.firstIndicatorInstance);
         uint256[] memory secondIndicatorValue = IIndicator(instance.secondIndicatorAddress).getValue(instance.secondIndicatorInstance);
@@ -90,9 +89,7 @@ contract FallByAtMost is IComparator {
             return false;
         }
 
-        uint256 percentFall = (firstIndicatorValues[0].sub(firstIndicatorValues[firstIndicatorValues.length - 1]).mul(1e18).mul(100).div(firstIndicatorValues[0]));
-        return (percentFall <= secondIndicatorValue[0]);
-        }
+        return ((firstIndicatorValues[0].sub(firstIndicatorValues[firstIndicatorValues.length - 1]).mul(1e18).mul(100).div(firstIndicatorValues[0])) <= secondIndicatorValue[0]);
     }
 
     /* ========== RESTRICTED FUNCTIONS ========== */

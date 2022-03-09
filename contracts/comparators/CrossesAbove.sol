@@ -76,7 +76,6 @@ contract CrossesAbove is IComparator {
     * @return (bool) Whether the comparator's conditions are met after the latest price feed update.
     */
     function checkConditions(uint256 _instance) external override onlyTradingBot(_instance) returns (bool) {
-        {
         State memory instance = instances[_instance];
         uint256[] memory firstIndicatorValue = IIndicator(instance.firstIndicatorAddress).getValue(instance.firstIndicatorInstance);
         uint256[] memory secondIndicatorValue = IIndicator(instance.secondIndicatorAddress).getValue(instance.secondIndicatorInstance);
@@ -93,7 +92,6 @@ contract CrossesAbove is IComparator {
         instances[_instance].variables[1] = secondIndicatorValue[secondIndicatorValue.length - 1];
 
         return result;
-        }
     }
 
     /* ========== RESTRICTED FUNCTIONS ========== */

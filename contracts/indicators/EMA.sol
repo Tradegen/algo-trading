@@ -96,7 +96,6 @@ contract EMA is IIndicator {
     * @param _latestPrice The latest price from oracle price feed.
     */
     function update(uint256 _instance, CandlestickUtils.Candlestick memory _latestPrice) external override onlyTradingBot(_instance) {
-        {
         State memory data = instances[_instance];
         uint256 currentValue = data.value;
         uint256 newValue = (currentValue == 0) ? _latestPrice.close :
@@ -105,10 +104,10 @@ contract EMA is IIndicator {
                                     data.variables[0].sub(multiplierNumerator.mul(data.variables[0].sub(_latestPrice.close)).div(multiplierDenominator));
 
         instances[_instance].value = newValue;
+        instances[_instance].variables[0] = currentValue;
         instances[_instance].history.push(newValue);
 
         emit Updated(_instance, _latestPrice, newValue);
-        }
     }
 
     /* ========== RESTRICTED FUNCTIONS ========== */

@@ -76,7 +76,6 @@ contract RisesTo is IComparator {
     * @return (bool) Whether the comparator's conditions are met after the latest price feed update.
     */
     function checkConditions(uint256 _instance) external override onlyTradingBot(_instance) returns (bool) {
-        {
         State memory instance = instances[_instance];
         uint256[] memory firstIndicatorValue = IIndicator(instance.firstIndicatorAddress).getValue(instance.firstIndicatorInstance);
         uint256[] memory secondIndicatorValue = IIndicator(instance.secondIndicatorAddress).getValue(instance.secondIndicatorInstance);
@@ -87,19 +86,18 @@ contract RisesTo is IComparator {
         }
 
         // First indicator can be within +/- 0.1% of second indicator value and still meet conditions
-        uint256 previousLowerErrorBound = instance.variables[1].mul(999).div(1000);
-        uint256 currentLowerErrorBound = secondIndicatorValue[secondIndicatorValue.length - 1].mul(999).div(1000);
-        uint256 currentUpperErrorBound = secondIndicatorValue[secondIndicatorValue.length - 1].mul(1001).div(1000);
+        // previousLowerErrorBound = instance.variables[1].mul(999).div(1000);
+        // currentLowerErrorBound = secondIndicatorValue[secondIndicatorValue.length - 1].mul(999).div(1000);
+        // currentUpperErrorBound = secondIndicatorValue[secondIndicatorValue.length - 1].mul(1001).div(1000);
 
-        bool result = (instance.variables[0] < previousLowerErrorBound)
-                    && (firstIndicatorValue[firstIndicatorValue.length - 1] >= currentLowerErrorBound)
-                    && (firstIndicatorValue[firstIndicatorValue.length - 1] <= currentUpperErrorBound);
+        bool result = (instance.variables[0] < instance.variables[1].mul(999).div(1000))
+                    && (firstIndicatorValue[firstIndicatorValue.length - 1] >= secondIndicatorValue[secondIndicatorValue.length - 1].mul(999).div(1000))
+                    && (firstIndicatorValue[firstIndicatorValue.length - 1] <= secondIndicatorValue[secondIndicatorValue.length - 1].mul(1001).div(1000));
 
         instances[_instance].variables[0] = firstIndicatorValue[firstIndicatorValue.length - 1];
         instances[_instance].variables[1] = secondIndicatorValue[secondIndicatorValue.length - 1];
 
         return result;
-        }
     }
 
     /* ========== RESTRICTED FUNCTIONS ========== */

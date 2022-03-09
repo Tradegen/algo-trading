@@ -91,15 +91,12 @@ contract NthPriceUpdate is IIndicator {
     * @param _latestPrice The latest price from oracle price feed.
     */
     function update(uint256 _instance, CandlestickUtils.Candlestick memory _latestPrice) external override onlyTradingBot(_instance) {
-        {
         State memory data = instances[_instance];
-        uint256 value = (data.history.length >= (data.params >> 80)) ? data.history[data.history.length.sub(data.params >> 80)] : 0;
 
         instances[_instance].history.push(_latestPrice.close);
-        instances[_instance].value = value;
+        instances[_instance].value = (data.history.length >= (data.params >> 80)) ? data.history[data.history.length.sub(data.params >> 80)] : 0;
         
-        emit Updated(_instance, _latestPrice, value);
-        }
+        emit Updated(_instance, _latestPrice, (data.history.length >= (data.params >> 80)) ? data.history[data.history.length.sub(data.params >> 80)] : 0);
     }
 
     /* ========== RESTRICTED FUNCTIONS ========== */

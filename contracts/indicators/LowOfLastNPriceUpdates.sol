@@ -91,7 +91,6 @@ contract LowOfLastNPriceUpdates is IIndicator {
     * @param _latestPrice The latest price from oracle price feed.
     */
     function update(uint256 _instance, CandlestickUtils.Candlestick memory _latestPrice) external override onlyTradingBot(_instance) {
-        {
         State memory data = instances[_instance];
         uint256 length = (data.history.length >= (data.params >> 80)) ? (data.params >> 80) : 0;
         uint256 low;
@@ -106,7 +105,6 @@ contract LowOfLastNPriceUpdates is IIndicator {
         instances[_instance].value = low;
         
         emit Updated(_instance, _latestPrice, low);
-        }
     }
 
     /* ========== RESTRICTED FUNCTIONS ========== */

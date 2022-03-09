@@ -90,13 +90,9 @@ contract Interval is IIndicator {
     * @param _latestPrice The latest price from oracle price feed.
     */
     function update(uint256 _instance, CandlestickUtils.Candlestick memory _latestPrice) external override onlyTradingBot(_instance) {
-        {
-        State memory data = instances[_instance];
-
-        instances[_instance].history.push(data.value);
+        instances[_instance].history.push(instances[_instance].value);
         
-        emit Updated(_instance, _latestPrice, data.value);
-        }
+        emit Updated(_instance, _latestPrice, instances[_instance].value);
     }
 
     /* ========== RESTRICTED FUNCTIONS ========== */
