@@ -28,8 +28,8 @@ contract Components is IComponents, ERC1155, Ownable {
     address public immutable xTGEN;
     address public immutable marketplace;
 
-    uint256 numberOfIndicators;
-    uint256 numberOfComparators;
+    uint256 public numberOfIndicators;
+    uint256 public numberOfComparators;
 
     // Indicator/comparator address => component info.
     mapping(address => Component) public components;

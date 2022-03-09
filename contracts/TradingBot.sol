@@ -227,12 +227,6 @@ contract TradingBot is ITradingBot {
     * @param _tradedAsset Address of the asset this bot will simulate trades for.
     */
     function initialize(uint256 _mintFee, uint256 _tradeFee, uint256 _timeframe, uint256 _maxTradeDuration, uint256 _profitTarget, uint256 _stopLoss, address _tradedAsset) external override onlyFactory isNotInitialized {
-        require(_timeframe > 0, "TradingBot: timeframe must be above 0.");
-        require(_maxTradeDuration > 0, "TradingBot: max trade duration must be above 0.");
-        require(_profitTarget > 0, "TradingBot: profit target must be above 0.");
-        require(_stopLoss > 0, "TradingBot: stop loss must be above 0.");
-        require(_tradedAsset != address(0), "TradingBot: invalid address for traded asset.");
-
         // Initialize fees.
         tokenMintFee = _mintFee;
         tokenTradeFee = _tradeFee;
