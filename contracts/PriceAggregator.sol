@@ -11,6 +11,7 @@ import "./interfaces/IPriceAggregator.sol";
 
 contract PriceAggregator is IPriceAggregator, Ownable {
     using SafeMath for uint256;
+    using CandlestickUtils for CandlestickUtils.Candlestick;
 
     /* ========== STATE VARIABLES ========== */
 
@@ -25,11 +26,11 @@ contract PriceAggregator is IPriceAggregator, Ownable {
 
     // Historical data
     uint256 public override numberOfCandlesticks;
-    mapping (uint256 => Candlestick) public prices; // Starts at index 0.
+    mapping (uint256 => CandlestickUtils.Candlestick) public prices; // Starts at index 0.
 
     // Pending data
     uint256 public numberOfUpdates;
-    Candlestick public currentCandlestick;
+    CandlestickUtils.Candlestick public currentCandlestick;
 
     /* ========== CONSTRUCTOR ========== */
 
@@ -50,7 +51,7 @@ contract PriceAggregator is IPriceAggregator, Ownable {
      * @notice Doesn't account for the candlestick currently forming.
      * @return (Candlestick) Latest candlestick for this asset.
      */
-    function getCurrentPrice() external view override returns (Candlestick memory) {
+    function getCurrentPrice() external view override returns (CandlestickUtils.Candlestick memory) {
         return prices[numberOfCandlesticks];
     }
 
@@ -58,7 +59,7 @@ contract PriceAggregator is IPriceAggregator, Ownable {
      * @dev Returns the candlestick currently forming.
      * @return (Candlestick) Latest candlestick for this asset.
      */
-    function getPendingPrice() external view override returns (Candlestick memory) {
+    function getPendingPrice() external view override returns (CandlestickUtils.Candlestick memory) {
         return currentCandlestick;
     }
 
@@ -68,7 +69,7 @@ contract PriceAggregator is IPriceAggregator, Ownable {
      * @param _index Index of the candlestick.
      * @return (Candlestick) Latest candlestick for this asset.
      */
-    function getPriceAt(uint256 _index) external view override returns (Candlestick memory) {
+    function getPriceAt(uint256 _index) external view override returns (CandlestickUtils.Candlestick memory) {
         require(_index >= 0, "PriceAggregator: index must be positive.");
 
         return prices[_index];
@@ -115,7 +116,7 @@ contract PriceAggregator is IPriceAggregator, Ownable {
             numberOfCandlesticks = numberOfCandlesticks.add(1);
 
             // Initialize the next candlestick.
-            currentCandlestick = Candlestick({
+            currentCandlestick = CandlestickUtils.Candlestick({
                 asset: asset,
                 startingTimestamp: block.timestamp,
                 endingTimestamp: 0,

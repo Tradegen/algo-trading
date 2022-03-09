@@ -4,6 +4,9 @@ pragma solidity ^0.8.3;
 // Openzeppelin
 import "./openzeppelin-solidity/contracts/SafeMath.sol";
 
+// Libraries
+import './libraries/CandlestickUtils.sol';
+
 // Interfaces
 import './interfaces/IIndicator.sol';
 import './interfaces/IComparator.sol';
@@ -17,6 +20,7 @@ import './interfaces/ITradingBot.sol';
 
 contract TradingBot is ITradingBot {
     using SafeMath for uint256;
+    using CandlestickUtils for CandlestickUtils.Candlestick;
 
     uint256 public constant MAX_MINT_FEE = 1000; // 10%, denominated in 10000.
     uint256 public constant MAX_TRADE_FEE = 1000; // 10%, denominated in 10000.
@@ -53,7 +57,7 @@ contract TradingBot is ITradingBot {
     bool public inTrade;
     uint256 public entryPrice;
     uint256 public numberOfUpdates;
-    IPriceAggregator.Candlestick[] public candlesticks; // Used to create an aggregate candlestick based on the timeframe.
+    CandlestickUtils.Candlestick[] public candlesticks; // Used to create an aggregate candlestick based on the timeframe.
 
     // Contract management
     bool public initialized;
@@ -136,7 +140,7 @@ contract TradingBot is ITradingBot {
     function onPriceFeedUpdate() external override hasStarted hasGeneratedRules isInitialized {
         require(canBeUpdated(), "TradingBot: need to wait for a new candlestick before updating.");
 
-        IPriceAggregator.Candlestick memory latestPrice = IPriceAggregator(priceAggregatorRouter.getPriceAggregator(tradedAsset)).getCurrentPrice();
+        CandlestickUtils.Candlestick memory latestPrice = IPriceAggregator(priceAggregatorRouter.getPriceAggregator(tradedAsset)).getCurrentPrice();
 
         numberOfUpdates = numberOfUpdates.add(1);
         candlesticks[numberOfUpdates % timeframe] = latestPrice;
@@ -144,7 +148,7 @@ contract TradingBot is ITradingBot {
             return;
         }
 
-        IPriceAggregator.Candlestick memory candlestick = _createAggregateCandlestick();
+        CandlestickUtils.Candlestick memory candlestick = _createAggregateCandlestick(candlesticks);
         _updateRules(candlestick);
 
         // Bot does not have an open position.
@@ -240,7 +244,7 @@ contract TradingBot is ITradingBot {
 
         initialized = true;
 
-        candlesticks = new IPriceAggregator.Candlestick[](_timeframe);
+        candlesticks = new CandlestickUtils.Candlestick[](_timeframe);
 
         emit Initialized(_mintFee, _tradeFee, _timeframe, _maxTradeDuration, _profitTarget, _stopLoss, _tradedAsset);
     }
@@ -309,32 +313,6 @@ contract TradingBot is ITradingBot {
     }
 
     /* ========== INTERNAL FUNCTIONS ========== */
-
-    /**
-    * @dev Combines stored candlesticks into one candlestick, based on the trading bot's timeframe.
-    * @return candlestick An aggregated candlestick struct.
-    */
-    function _createAggregateCandlestick() internal view returns (IPriceAggregator.Candlestick memory candlestick) {
-        {
-        // Save gas by accessing the state variable once.
-        IPriceAggregator.Candlestick[] memory data = candlesticks;
-
-        candlestick.open = data[0].open;
-        candlestick.low = data[0].low;
-
-        candlestick.close = data[data.length.sub(1)].close;
-
-        for (uint256 i = 0; i < data.length; i++) {
-            if (data[i].low < candlestick.low) {
-                candlestick.low = data[i].low;
-            }
-
-            if (data[i].high > candlestick.high) {
-                candlestick.high = data[i].high;
-            }
-        }
-        }
-    }
 
     /**
     * @dev Given a serialized rule, creates an instance of the rule's indicators/comparators.
@@ -407,16 +385,17 @@ contract TradingBot is ITradingBot {
     * @dev Updates each entry/exit rule's indicators with the latest candlestick.
     * @param _latestPrice The latest candlestick.
     */
-    function _updateRules(IPriceAggregator.Candlestick memory _latestPrice) internal {
+    function _updateRules(CandlestickUtils.Candlestick memory _latestPrice) internal {
         {
         uint256 numEntryRules = numberOfEntryRules;
-        uint256 numExitRules = numberOfExitRules;
-
         for (uint256 i = 0; i < numEntryRules; i++) {
             IIndicator(entryRules[i].firstIndicatorAddress).update(entryRules[i].firstIndicatorInstance, _latestPrice);
             IIndicator(entryRules[i].secondIndicatorAddress).update(entryRules[i].secondIndicatorInstance, _latestPrice);
         }
+        }
 
+        {
+        uint256 numExitRules = numberOfExitRules;
         for (uint256 i = 0; i < numExitRules; i++) {
             IIndicator(exitRules[i].firstIndicatorAddress).update(exitRules[i].firstIndicatorInstance, _latestPrice);
             IIndicator(exitRules[i].secondIndicatorAddress).update(exitRules[i].secondIndicatorInstance, _latestPrice);

@@ -2,18 +2,10 @@
 
 pragma solidity ^0.8.3;
 
+// Libraries
+import '../libraries/CandlestickUtils.sol';
+
 interface IPriceAggregator {
-
-    struct Candlestick {
-        address asset;
-        uint256 startingTimestamp;
-        uint256 endingTimestamp;
-        uint256 open;
-        uint256 close;
-        uint256 high;
-        uint256 low;
-    }
-
     // Views
 
     /**
@@ -31,13 +23,13 @@ interface IPriceAggregator {
      * @notice Doesn't account for the candlestick currently forming.
      * @return (Candlestick) Latest candlestick for this asset.
      */
-    function getCurrentPrice() external view returns (Candlestick memory);
+    function getCurrentPrice() external view returns (CandlestickUtils.Candlestick memory);
 
     /**
      * @dev Returns the candlestick currently forming.
      * @return (Candlestick) Latest candlestick for this asset.
      */
-    function getPendingPrice() external view returns (Candlestick memory);
+    function getPendingPrice() external view returns (CandlestickUtils.Candlestick memory);
 
      /**
      * @dev Returns the candlestick at the given index.
@@ -45,7 +37,7 @@ interface IPriceAggregator {
      * @param _index Index of the candlestick.
      * @return (Candlestick) Latest candlestick for this asset.
      */
-    function getPriceAt(uint256 _index) external view returns (Candlestick memory);
+    function getPriceAt(uint256 _index) external view returns (CandlestickUtils.Candlestick memory);
 
     // Mutative
 
