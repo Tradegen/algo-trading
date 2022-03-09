@@ -38,6 +38,8 @@ contract TradingBot is ITradingBot {
     uint256 public override tokenTradeFee;
 
     // Parameters
+    string public name;
+    string public symbol;
     uint256 public maxTradeDuration;
     uint256 public timeframe;
     uint256 public profitTarget;
@@ -148,7 +150,7 @@ contract TradingBot is ITradingBot {
             return;
         }
 
-        CandlestickUtils.Candlestick memory candlestick = _createAggregateCandlestick(candlesticks);
+        CandlestickUtils.Candlestick memory candlestick = CandlestickUtils._createAggregateCandlestick(candlesticks);
         _updateRules(candlestick);
 
         // Bot does not have an open position.
@@ -222,6 +224,8 @@ contract TradingBot is ITradingBot {
     /**
     * @dev Initializes the parameters for the trading bot.
     * @notice This function is meant to be called by the TradingBots contract when creating a trading bot.
+    * @param _name Name of the trading bot.
+    * @param _symbol Symbol of the trading bot.
     * @param _mintFee Fee to charge when users mint a synthetic bot token. Denominated in 10000.
     * @param _tradeFee Fee to charge when users trade a synthetic bot token. Denominated in 10000.
     * @param _timeframe Number of candlesticks per aggregate candlestick. Must be greater than 0.
@@ -230,12 +234,14 @@ contract TradingBot is ITradingBot {
     * @param _stopLoss % stop loss for a trade. Denominated in 10000.
     * @param _tradedAsset Address of the asset this bot will simulate trades for.
     */
-    function initialize(uint256 _mintFee, uint256 _tradeFee, uint256 _timeframe, uint256 _maxTradeDuration, uint256 _profitTarget, uint256 _stopLoss, address _tradedAsset) external override onlyFactory isNotInitialized {
+    function initialize(string memory _name, string memory _symbol, uint256 _mintFee, uint256 _tradeFee, uint256 _timeframe, uint256 _maxTradeDuration, uint256 _profitTarget, uint256 _stopLoss, address _tradedAsset) external override onlyFactory isNotInitialized {
         // Initialize fees.
         tokenMintFee = _mintFee;
         tokenTradeFee = _tradeFee;
 
         // Initialize parameters.
+        name = _name;
+        symbol = _symbol;
         timeframe = _timeframe;
         maxTradeDuration = _maxTradeDuration;
         profitTarget = _profitTarget;

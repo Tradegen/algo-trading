@@ -34,6 +34,8 @@ contract TradingBots is ERC1155 {
 
     /**
      * @dev Creates a trading bot and initializes it.
+     * @param _name Name of the trading bot.
+     * @param _symbol Symbol of the trading bot.
      * @param _mintFee Fee to charge when users mint a synthetic bot token. Denominated in 10000.
      * @param _tradeFee Fee to charge when users trade a synthetic bot token. Denominated in 10000.
      * @param _timeframe Number of candlesticks per aggregate candlestick. Must be greater than 0.
@@ -42,7 +44,7 @@ contract TradingBots is ERC1155 {
      * @param _stopLoss % stop loss for a trade. Denominated in 10000.
      * @param _tradedAsset Address of the asset this bot will simulate trades for.
      */
-    function createTradingBot(uint256 _mintFee, uint256 _tradeFee, uint256 _timeframe, uint256 _maxTradeDuration, uint256 _profitTarget, uint256 _stopLoss, address _tradedAsset, uint256[] memory _serializedEntryRules, uint256[] memory _serializedExitRules) external {
+    function createTradingBot(string memory _name, string memory _symbol, uint256 _mintFee, uint256 _tradeFee, uint256 _timeframe, uint256 _maxTradeDuration, uint256 _profitTarget, uint256 _stopLoss, address _tradedAsset, uint256[] memory _serializedEntryRules, uint256[] memory _serializedExitRules) external {
         require(_timeframe > 0, "TradingBots: timeframe must be above 0.");
         require(_maxTradeDuration > 0, "TradingBots: max trade duration must be above 0.");
         require(_profitTarget > 0, "TradingBots: profit target must be above 0.");
@@ -53,7 +55,7 @@ contract TradingBots is ERC1155 {
 
         (address botPerformanceOracleAddress, address syntheticBotTokenAddress) = externalContractFactory.createContracts();
         address tradingBotAddress = address(new TradingBot(msg.sender, syntheticBotTokenAddress, components, priceAggregatorRouter, botPerformanceOracleAddress));
-        ITradingBot(tradingBotAddress).initialize(_mintFee, _tradeFee, _timeframe, _maxTradeDuration, _profitTarget, _stopLoss, _tradedAsset);
+        ITradingBot(tradingBotAddress).initialize(_name, _symbol, _mintFee, _tradeFee, _timeframe, _maxTradeDuration, _profitTarget, _stopLoss, _tradedAsset);
         ITradingBot(tradingBotAddress).generateRules(_serializedEntryRules, _serializedExitRules);
 
         tradingBots[numberOfTradingBots] = tradingBotAddress;
