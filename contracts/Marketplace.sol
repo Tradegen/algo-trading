@@ -24,6 +24,7 @@ contract Marketplace is IMarketplace, ERC1155Holder, Ownable {
     uint256 public transactionFee = 200; 
 
     IERC1155 public immutable components;
+    IERC1155 public immutable tradingBots;
     IERC20 public immutable TGEN;
     address public immutable xTGEN;
 
@@ -41,12 +42,14 @@ contract Marketplace is IMarketplace, ERC1155Holder, Ownable {
     // Returns 0 if user is not selling the NFT ID.
     mapping (address => mapping (uint256 => uint256)) public userToID; 
 
-    constructor(address _components, address _TGEN, address _xTGEN) Ownable() {
+    constructor(address _components, address _tradingBots, address _TGEN, address _xTGEN) Ownable() {
         require(_components != address(0), "Marketplace: invalid address for Components conrtact.");
+        require(_tradingBots != address(0), "Marketplace: invalid address for TradingBots conrtact.");
         require(_TGEN != address(0), "Marketplace: invalid address for TGEN.");
         require(_xTGEN != address(0), "Marketplace: invalid address for xTGEN.");
 
         components = IERC1155(_components);
+        tradingBots = IERC1155(_tradingBots);
         TGEN = IERC20(_TGEN);
         xTGEN = _xTGEN;
     }
@@ -66,12 +69,12 @@ contract Marketplace is IMarketplace, ERC1155Holder, Ownable {
     /**
     * @dev Given the index of a marketplace listing, returns the listing's data
     * @param _index Index of the marketplace listing
-    * @return (address, bool, uint256, uint256) Address of the seller, whether the listing exists, NFT ID, and the price (in TGEN).
+    * @return (address, bool, bool, uint256, uint256) Address of the seller, whether the listing exists, whether the NFT is a trading bot, NFT ID, and the price (in TGEN).
     */
-    function getMarketplaceListing(uint256 _index) external view indexInRange(_index) returns (address, bool, uint256, uint256) {
+    function getMarketplaceListing(uint256 _index) external view override indexInRange(_index) returns (address, bool, bool, uint256, uint256) {
         MarketplaceListing memory listing = marketplaceListings[_index];
 
-        return (listing.seller, listing.exists, listing.ID, listing.price);
+        return (listing.seller, listing.exists, listing.isTradingBot, listing.ID, listing.price);
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
@@ -95,8 +98,14 @@ contract Marketplace is IMarketplace, ERC1155Holder, Ownable {
         TGEN.safeTransfer(xTGEN, price.mul(transactionFee).div(10000));
 
         // Transfer NFT to buyer.
-        components.setApprovalForAll(msg.sender, true);
-        components.safeTransferFrom(address(this), msg.sender, marketplaceListings[_index].ID, 1, "");
+        if (marketplaceListings[_index].isTradingBot) {
+            tradingBots.setApprovalForAll(msg.sender, true);
+            tradingBots.safeTransferFrom(address(this), msg.sender, marketplaceListings[_index].ID, 1, "");
+        }
+        else {
+            components.setApprovalForAll(msg.sender, true);
+            components.safeTransferFrom(address(this), msg.sender, marketplaceListings[_index].ID, 1, "");
+        }
 
         // Update state variables.
         _removeListing(marketplaceListings[_index].seller, _index);
@@ -107,9 +116,10 @@ contract Marketplace is IMarketplace, ERC1155Holder, Ownable {
     /**
     * @dev Creates a new marketplace listing with the given price and NFT ID.
     * @param _ID ID of the indicator/comparator NFT.
+    * @param _isTradingBot Whether the NFT is a trading bot.
     * @param _price TGEN price of the NFT.
     */
-    function createListing(uint256 _ID, uint256 _price) external override {
+    function createListing(uint256 _ID, bool _isTradingBot, uint256 _price) external override {
         require(userToID[msg.sender][_ID] == 0, "Marketplace: Already have a marketplace listing for this NFT.");
         require(_price > 0, "Marketplace: Price must be greater than 0");
         require(components.balanceOf(msg.sender, _ID) == 1, "Marketplace: don't own NFT.");
@@ -117,12 +127,17 @@ contract Marketplace is IMarketplace, ERC1155Holder, Ownable {
         numberOfMarketplaceListings = numberOfMarketplaceListings.add(1);
         listingIndexes[_ID] = numberOfMarketplaceListings;
         userToID[msg.sender][_ID] = numberOfMarketplaceListings;
-        marketplaceListings[numberOfMarketplaceListings] = MarketplaceListing(msg.sender, true, _ID, _price);
+        marketplaceListings[numberOfMarketplaceListings] = MarketplaceListing(msg.sender, true, _isTradingBot, _ID, _price);
 
         // Transfer NFT to marketplace.
-        components.safeTransferFrom(msg.sender, address(this), _ID, 1, "");
+        if (_isTradingBot) {
+            tradingBots.safeTransferFrom(msg.sender, address(this), _ID, 1, "");
+        }
+        else {
+            components.safeTransferFrom(msg.sender, address(this), _ID, 1, "");
+        }
 
-        emit CreatedListing(msg.sender, numberOfMarketplaceListings, _ID, _price);
+        emit CreatedListing(msg.sender, numberOfMarketplaceListings, _isTradingBot, _ID, _price);
     }
 
     /**
@@ -133,8 +148,14 @@ contract Marketplace is IMarketplace, ERC1155Holder, Ownable {
         _removeListing(msg.sender, _index);
 
         // Transfer NFT to seller.
-        components.setApprovalForAll(msg.sender, true);
-        components.safeTransferFrom(address(this), msg.sender, marketplaceListings[_index].ID, 1, "");
+        if (marketplaceListings[_index].isTradingBot) {
+            tradingBots.setApprovalForAll(msg.sender, true);
+            tradingBots.safeTransferFrom(address(this), msg.sender, marketplaceListings[_index].ID, 1, "");
+        }
+        else {
+            components.setApprovalForAll(msg.sender, true);
+            components.safeTransferFrom(address(this), msg.sender, marketplaceListings[_index].ID, 1, "");
+        }
 
         emit RemovedListing(msg.sender, _index);
     }

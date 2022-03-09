@@ -8,6 +8,7 @@ interface IMarketplace {
     struct MarketplaceListing {
         address seller;
         bool exists;
+        bool isTradingBot;
         uint256 ID;
         uint256 price; // Denominated in TGEN.
     }
@@ -23,9 +24,9 @@ interface IMarketplace {
     /**
     * @dev Given the index of a marketplace listing, returns the listing's data
     * @param _index Index of the marketplace listing
-    * @return (address, bool, uint256, uint256) Address of the seller, whether the listing exists, NFT ID, and the price (in TGEN).
+    * @return (address, bool, bool, uint256, uint256) Address of the seller, whether the listing exists, whether the NFT is a trading bot, NFT ID, and the price (in TGEN).
     */
-    function getMarketplaceListing(uint256 _index) external view returns (address, bool, uint256, uint256);
+    function getMarketplaceListing(uint256 _index) external view returns (address, bool, bool, uint256, uint256);
 
     /**
     * @dev Purchases the indicator/comparator NFT at the given listing index.
@@ -36,9 +37,10 @@ interface IMarketplace {
     /**
     * @dev Creates a new marketplace listing with the given price and NFT ID.
     * @param _ID ID of the indicator/comparator NFT.
+    * @param _isTradingBot Whether the NFT is a trading bot.
     * @param _price TGEN price of the NFT.
     */
-    function createListing(uint256 _ID, uint256 _price) external;
+    function createListing(uint256 _ID, bool _isTradingBot, uint256 _price) external;
 
     /**
     * @dev Removes the marketplace listing at the given index.
@@ -55,7 +57,7 @@ interface IMarketplace {
 
     /* ========== EVENTS ========== */
 
-    event CreatedListing(address indexed seller, uint256 marketplaceListingIndex, uint256 ID, uint256 price);
+    event CreatedListing(address indexed seller, uint256 marketplaceListingIndex, bool isTradingBot, uint256 ID, uint256 price);
     event RemovedListing(address indexed seller, uint256 marketplaceListingIndex);
     event UpdatedPrice(address indexed seller, uint256 marketplaceListingIndex, uint256 newPrice);
     event Purchased(address indexed buyer, uint256 marketplaceListingIndex, uint256 ID, uint256 price);
