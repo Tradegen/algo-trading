@@ -95,7 +95,7 @@ contract EMA is IIndicator {
     * @param _instance Instance number of this indicator.
     * @param _latestPrice The latest price from oracle price feed.
     */
-    function update(uint256 _instance, IPriceAggregator.Candlestick memory _latestPrice) external override onlyTradingBot(_instance) {
+    function update(uint256 _instance, CandlestickUtils.Candlestick memory _latestPrice) external override onlyTradingBot(_instance) {
         {
         State memory data = instances[_instance];
         uint256 currentValue = data.value;
