@@ -18,22 +18,19 @@ library CandlestickUtils {
     * @dev Combines stored candlesticks into one candlestick, based on the trading bot's timeframe.
     * @return candlestick An aggregated candlestick struct.
     */
-    function _createAggregateCandlestick(Candlestick[] storage candlesticks) internal pure returns (Candlestick memory candlestick) {
-        // Save gas by accessing the state variable once.
-        Candlestick[] memory data = candlesticks;
+    function _createAggregateCandlestick(Candlestick[] memory candlesticks) internal view returns (Candlestick memory candlestick) {
+        candlestick.open = candlesticks[0].open;
+        candlestick.low = candlesticks[0].low;
 
-        candlestick.open = data[0].open;
-        candlestick.low = data[0].low;
+        candlestick.close = candlesticks[candlesticks.length - 1].close;
 
-        candlestick.close = data[data.length - 1].close;
-
-        for (uint256 i = 0; i < data.length; i++) {
-            if (data[i].low < candlestick.low) {
-                candlestick.low = data[i].low;
+        for (uint256 i = 0; i < candlesticks.length; i++) {
+            if (candlesticks[i].low < candlestick.low) {
+                candlestick.low = candlesticks[i].low;
             }
 
-            if (data[i].high > candlestick.high) {
-                candlestick.high = data[i].high;
+            if (candlesticks[i].high > candlestick.high) {
+                candlestick.high = candlesticks[i].high;
             }
         }
     }

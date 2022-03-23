@@ -51,13 +51,6 @@ contract TradingBot is ITradingBot {
     // Exit rules
     uint256[] public serializedExitRules;
 
-    // Position management
-    uint256 public entryIndex;
-    bool public inTrade;
-    uint256 public entryPrice;
-    uint256 public numberOfUpdates;
-    CandlestickUtils.Candlestick[] public candlesticks; // Used to create an aggregate candlestick based on the timeframe.
-
     // Contract management
     bool public initialized;
     bool public generatedRules;
@@ -131,8 +124,6 @@ contract TradingBot is ITradingBot {
         tradedAsset = _tradedAsset;
 
         initialized = true;
-
-        candlesticks = new CandlestickUtils.Candlestick[](_timeframe);
 
         emit Initialized(_mintFee, _tradeFee, _timeframe, _maxTradeDuration, _profitTarget, _stopLoss, _tradedAsset);
     }

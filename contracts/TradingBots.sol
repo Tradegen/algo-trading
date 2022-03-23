@@ -17,10 +17,7 @@ contract TradingBots is ERC1155 {
 
     struct TradingBotInfo {
         address owner;
-        bool created;
-        bool initialized;
-        bool generatedRules;
-        bool registered;
+        uint256 status; // 1 = created, 2 = initialized, 3 = generated rules, 4 = registered
         string name;
         string symbol;
         uint256 mintFee;
@@ -72,10 +69,7 @@ contract TradingBots is ERC1155 {
 
         tradingBotInfos[numberOfTradingBots] = TradingBotInfo({
             owner: msg.sender,
-            created: false,
-            initialized: false,
-            generatedRules: false,
-            registered: false,
+            status: 0,
             name: _name,
             symbol: _symbol,
             mintFee: _mintFee,
@@ -103,10 +97,10 @@ contract TradingBots is ERC1155 {
      */
     function createTradingBot(uint256 _tokenID) external {
         require(msg.sender == tradingBotInfos[_tokenID].owner, "TradingBots: only the trading bot owner can call this function.");
-        require(!tradingBotInfos[_tokenID].created, "TradingBots: trading bot already created.");
+        require(tradingBotInfos[_tokenID].status == 0, "TradingBots: trading bot already created.");
 
         tradingBots[_tokenID] = address(new TradingBot(msg.sender, components));
-        tradingBotInfos[_tokenID].created = true;
+        tradingBotInfos[_tokenID].status = 1;
 
         emit CreatedTradingBot(tradingBots[_tokenID]);
     }
@@ -121,12 +115,11 @@ contract TradingBots is ERC1155 {
         TradingBotInfo memory info = tradingBotInfos[_tokenID];
 
         require(msg.sender == info.owner, "TradingBots: only the trading bot owner can call this function.");
-        require(info.created, "TradingBots: trading bot contract needs to be created first.");
-        require(!info.initialized, "TradingBots: trading bot already initialized.");
+        require(info.status == 1, "TradingBots: trading bot already initialized.");
 
         ITradingBot(tradingBots[_tokenID]).initialize(info.name, info.symbol, info.mintFee, info.tradeFee, info.timeframe, info.maxTradeDuration, info.profitTarget, info.stopLoss, info.tradedAsset);
 
-        tradingBotInfos[_tokenID].initialized = true;
+        tradingBotInfos[_tokenID].status = 2;
 
         emit InitializedTradingBot(tradingBots[_tokenID]);
     }
@@ -141,13 +134,11 @@ contract TradingBots is ERC1155 {
         TradingBotInfo memory info = tradingBotInfos[_tokenID];
 
         require(msg.sender == info.owner, "TradingBots: only the trading bot owner can call this function.");
-        require(info.created, "TradingBots: trading bot contract needs to be created first.");
-        require(info.initialized, "TradingBots: trading bot contract needs to be initialized first.");
-        require(!info.generatedRules, "TradingBots: trading bot already generated rules.");
+        require(info.status == 2, "TradingBots: trading bot already generated rules.");
 
         ITradingBot(tradingBots[_tokenID]).generateRules(info.serializedEntryRules, info.serializedExitRules);
 
-        tradingBotInfos[_tokenID].generatedRules = true;
+        tradingBotInfos[_tokenID].status = 3;
 
         emit GeneratedRulesForTradingBot(tradingBots[_tokenID]);
     }
@@ -163,12 +154,9 @@ contract TradingBots is ERC1155 {
         TradingBotInfo memory info = tradingBotInfos[_tokenID];
 
         require(msg.sender == info.owner, "TradingBots: only the trading bot owner can call this function.");
-        require(info.created, "TradingBots: trading bot contract needs to be created first.");
-        require(info.initialized, "TradingBots: trading bot contract needs to be initialized first.");
-        require(info.generatedRules, "TradingBots: trading bot already generated rules.");
-        require(!info.registered, "TradingBots: trading bot already registered.");
+        require(info.status == 3, "TradingBots: trading bot already registered.");
 
-        tradingBotInfos[_tokenID].registered = true;
+        tradingBotInfos[_tokenID].status = 4;
 
         emit RegisteredTradingBot(info.timeframe, info.maxTradeDuration, info.profitTarget, info.stopLoss, info.tradedAsset, info.serializedEntryRules, info.serializedExitRules);
     }

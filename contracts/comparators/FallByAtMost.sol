@@ -40,7 +40,7 @@ contract FallByAtMost is IComparator {
     * @param _secondIndicatorInstance Instance number of the second indicator.
     * @return (uint256) Instance number of the comparator.
     */
-    function addTradingBot(address _firstIndicatorAddress, address _secondIndicatorAddress, uint256 _firstIndicatorInstance, uint256 _secondIndicatorInstance) external returns (uint256) {
+    function addTradingBot(address _firstIndicatorAddress, address _secondIndicatorAddress, uint256 _firstIndicatorInstance, uint256 _secondIndicatorInstance) external override returns (uint256) {
         require(_firstIndicatorAddress != address(0), "Comparator: invalid address for first indicator.");
         require(_secondIndicatorAddress != address(0), "Comparator: invalid address for second indicator.");
         require(_firstIndicatorAddress != _secondIndicatorAddress, "Comparator: indicators are the same.");

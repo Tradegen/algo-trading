@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.3;
+pragma experimental ABIEncoderV2;
 
 // Openzeppelin
 import "../openzeppelin-solidity/contracts/SafeMath.sol";
@@ -53,7 +54,7 @@ contract TradingBotLogic {
     bool public inTrade;
     uint256 public entryPrice;
     uint256 public numberOfUpdates;
-    CandlestickUtils.Candlestick[] public candlesticks; // Used to create an aggregate candlestick based on the timeframe.
+    mapping(uint256 => CandlestickUtils.Candlestick) public candlesticks; // Used to create an aggregate candlestick based on the timeframe.
 
     // Contract management
     bool public initialized;
@@ -136,7 +137,7 @@ contract TradingBotLogic {
             return;
         }
 
-        CandlestickUtils.Candlestick memory candlestick = CandlestickUtils._createAggregateCandlestick(candlesticks);
+        CandlestickUtils.Candlestick memory candlestick;// = _createAggregateCandlestick();
         _updateRules(candlestick);
 
         // Bot does not have an open position.
@@ -184,6 +185,27 @@ contract TradingBotLogic {
     }
 
     /* ========== INTERNAL FUNCTIONS ========== */
+
+    /**
+    * @dev Combines stored candlesticks into one candlestick, based on the trading bot's timeframe.
+    * @return candlestick An aggregated candlestick struct.
+    */
+    function _createAggregateCandlestick() internal view returns (CandlestickUtils.Candlestick memory candlestick) {
+        candlestick.open = candlesticks[0].open;
+        candlestick.low = candlesticks[0].low;
+
+        candlestick.close = candlesticks[timeframe.sub(1)].close;
+
+        for (uint256 i = 0; i < timeframe.sub(1); i++) {
+            if (candlesticks[i].low < candlestick.low) {
+                candlestick.low = candlesticks[i].low;
+            }
+
+            if (candlesticks[i].high > candlestick.high) {
+                candlestick.high = candlesticks[i].high;
+            }
+        }
+    }
 
     /**
     * @dev Returns whether all entry rules are met.
