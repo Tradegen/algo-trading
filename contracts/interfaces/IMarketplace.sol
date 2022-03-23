@@ -17,9 +17,10 @@ interface IMarketplace {
     * @dev Given an NFT ID, returns its listing index.
     * @notice Returns 0 if the NFT with the given ID is not listed.
     * @param _ID Token ID of the indicator/comparator NFT.
-    * @return uint256 Listing index of the indicator/comparator NFT.
+    * @param _isTradingBot Whether the NFT is a trading bot.
+    * @return (uint256) Listing index of the indicator/comparator NFT.
     */
-    function getListingIndex(uint256 _ID) external view returns (uint256);
+    function getListingIndex(uint256 _ID, bool _isTradingBot) external view returns (uint256);
 
     /**
     * @dev Given the index of a marketplace listing, returns the listing's data
@@ -60,5 +61,5 @@ interface IMarketplace {
     event CreatedListing(address indexed seller, uint256 marketplaceListingIndex, bool isTradingBot, uint256 ID, uint256 price);
     event RemovedListing(address indexed seller, uint256 marketplaceListingIndex);
     event UpdatedPrice(address indexed seller, uint256 marketplaceListingIndex, uint256 newPrice);
-    event Purchased(address indexed buyer, uint256 marketplaceListingIndex, uint256 ID, uint256 price);
+    event Purchased(address indexed buyer, uint256 marketplaceListingIndex, uint256 ID, bool isTradingBot, uint256 price);
 }
