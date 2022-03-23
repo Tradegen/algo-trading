@@ -4,15 +4,6 @@ pragma solidity ^0.8.3;
 
 interface ITradingBot {
 
-    struct Rule {
-        address firstIndicatorAddress;
-        address secondIndicatorAddress;
-        address comparatorAddress;
-        uint256 firstIndicatorInstance;
-        uint256 secondIndicatorInstance;
-        uint256 comparatorInstance;
-    }
-
     struct Parameters {
         uint256 maxTradeDuration;
         uint256 timeframe;
@@ -22,12 +13,6 @@ interface ITradingBot {
     }
 
     // Views
-
-    /**
-     * @dev Returns whether onPriceFeedUpdate() can be called.
-     * @notice Checks if the PriceAggregator contract created a new candlestick.
-     */
-    function canBeUpdated() external view returns (bool);
 
     /**
      * @dev Returns the fee (denominated in 10000) for minting the bot's token.
@@ -50,24 +35,7 @@ interface ITradingBot {
     */
     function getTradingBotParameters() external view returns (uint256, uint256, uint256, uint256, address);
 
-    /**
-     * @dev Returns the trading bot's entry rules.
-     */
-    function getEntryRules() external view returns (Rule[] memory);
-
-    /**
-     * @dev Returns the trading bot's exit rules.
-     */
-    function getExitRules() external view returns (Rule[] memory);
-
     // Mutative
-
-    /**
-    * @dev Gets the latest price of the trading bot's traded asset and uses it to update the state of each entry/exit rule.
-    * @notice Simulates an order if entry/exit rules are met.
-    * @notice This function is meant to be called once per timeframe by a Keeper contract.
-    */
-    function onPriceFeedUpdate() external;
 
     /**
     * @dev Updates the owner of this trading bot.

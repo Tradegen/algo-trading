@@ -31,25 +31,25 @@ contract Components is IComponents, ERC1155, Ownable {
     uint256 public numberOfIndicators;
     uint256 public numberOfComparators;
 
-    // Indicator/comparator address => component info.
-    mapping(address => Component) public components;
+    // Indicator/comparator address on Tradegen blockchain. => component info.
+    mapping(bytes32 => Component) public components;
 
-    // Indicator ID => indicator address.
+    // Indicator ID => indicator address on Tradegen blockchain.
     // Starts at index 0.
-    mapping(uint256 => address) public indicators;
+    mapping(uint256 => bytes32) public indicators;
 
-    // Comparator ID => comparator address.
+    // Comparator ID => comparator address on Tradegen blockchain.
     // Starts at index 0.
-    mapping(uint256 => address) public comparators;
+    mapping(uint256 => bytes32) public comparators;
 
-    // Indicator/comparator address => bool.
-    mapping(address => bool) public isDefaultComponent;
+    // Indicator/comparator address on Tradegen blockchain. => bool.
+    mapping(bytes32 => bool) public isDefaultComponent;
 
-    // User address => indicator/comparator address => bool.
-    mapping(address => mapping(address => bool)) public hasPurchasedComponent; 
+    // User address => indicator/comparator index => bool.
+    mapping(address => mapping(uint256 => bool)) public hasPurchasedComponent; 
 
-    // Token ID => indicator/comparator address.
-    mapping(uint256 => address) public tokenIDs;
+    // Token ID => indicator/comparator address on Tradegen blockchain.
+    mapping(uint256 => bytes32) public tokenIDs;
 
     constructor(address _TGEN, address _xTGEN, address _marketplace) Ownable() {
         require(_TGEN != address(0), "Components: invalid address for TGEN.");
@@ -64,17 +64,17 @@ contract Components is IComponents, ERC1155, Ownable {
     /* ========== VIEWS ========== */
 
     /**
-     * @dev Given the address of a component, returns the component's info.
-     * @param _component Address of the indicator/comparator.
-     * @return (address, address, uint256, bool, bool, uint256) Address of the indicator/comparator,
+     * @dev Given the ID of a component, returns the component's info.
+     * @param _componentID ID of the indicator/comparator.
+     * @return (address, address, uint256, bool, bool, uint256) Address of the indicator/comparator on Tradegen blockchain,
      *                                                          address of the owner,
      *                                                          token ID,
      *                                                          whether the component is an indicator,
      *                                                          whether the indicator/comparator is default,
      *                                                          and price of the indicator/comparator.
      */
-    function getComponentInfo(address _component) external view override returns (address, address, uint256, bool, bool, uint256) {
-        Component memory component = components[_component];
+    function getComponentInfo(uint256 _componentID) external view override returns (bytes32, address, uint256, bool, bool, uint256) {
+        Component memory component = components[tokenIDs[_componentID]];
 
         return (component.componentAddress, component.owner, component.tokenID, component.isIndicator, component.isDefault, component.price);
     }
@@ -87,7 +87,7 @@ contract Components is IComponents, ERC1155, Ownable {
      * @return (bool) Whether the user has purchased this indicator.
      */
     function hasPurchasedIndicator(address _user, uint256 _indicatorID) public view override returns (bool) {
-        return isDefaultComponent[indicators[_indicatorID]] || hasPurchasedComponent[_user][indicators[_indicatorID]];
+        return isDefaultComponent[indicators[_indicatorID]] || hasPurchasedComponent[_user][_indicatorID];
     }
 
     /**
@@ -98,27 +98,55 @@ contract Components is IComponents, ERC1155, Ownable {
      * @return (bool) Whether the user has purchased this comparator.
      */
     function hasPurchasedComparator(address _user, uint256 _comparatorID) public view override returns (bool) {
-        return isDefaultComponent[comparators[_comparatorID]] || hasPurchasedComponent[_user][comparators[_comparatorID]];
+        return isDefaultComponent[comparators[_comparatorID]] || hasPurchasedComponent[_user][_comparatorID];
     }
 
     /**
-     * @dev Returns the address of the given indicator.
-     * @notice Returns address(0) if the indicator does not exist.
+     * @dev Returns the address of the given indicator on the Tradegen blockchain.
+     * @notice Returns empty bytes if the indicator does not exist.
      * @param _indicatorID ID of the indicator.
-     * @return (address) Address of the indicator.
+     * @return (bytes32) Address of the indicator.
      */
-    function getIndicatorAddress(uint256 _indicatorID) external view override returns (address) {
+    function getIndicatorAddress(uint256 _indicatorID) external view override returns (bytes32) {
         return indicators[_indicatorID];
     }
 
     /**
-     * @dev Returns the address of the given comparator.
+     * @dev Returns the address of the given comparator on the Tradegen blockchain.
      * @notice Returns address(0) if the comparator does not exist.
      * @param _comparatorID ID of the comparator.
-     * @return (address) Address of the comparator.
+     * @return (bytes32) Address of the comparator.
      */
-    function getComparatorAddress(uint256 _comparatorID) external view override returns (address) {
+    function getComparatorAddress(uint256 _comparatorID) external view override returns (bytes32) {
         return comparators[_comparatorID];
+    }
+
+    /**
+     * @dev Checks whether the given user purchased each indicator/comparator used in the given array of serialized rules.
+     * @notice Bits 0-15: empty (expected to be 0's).
+    *         Bits 16-31: Comparator ID.
+    *         Bits 32-47: First indicator ID.
+    *         Bits 48-63: Second indicator ID.
+    *         Bits 64-159: First indicator params; serialized array of 6 elements, 16 bits each.
+    *         Bits 160-255: Second indicator params; serialized array of 6 elements, 16 bits each.
+     * @param _user Address of the user.
+     * @param _serializedRules Array of entry/exit rules, with the info for each rule serialized as a uint256.
+     * @return (bool) Whether the user purchased each indicator/comparator used.
+     */
+    function checkRules(address _user, uint256[] memory _serializedRules) external view override returns (bool) {
+        for (uint256 i = 0; i < _serializedRules.length; i++) {
+            if (!hasPurchasedComparator(_user, _serializedRules[i] >> 224)) {
+                return false;
+            }
+            if (!hasPurchasedIndicator(_user, (_serializedRules[i] >> 208) & 0xFF)) {
+                return false;
+            }
+            if (!hasPurchasedIndicator(_user, (_serializedRules[i] >> 192) & 0xFF)) {
+                return false;
+            }
+        }
+        
+        return true;
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
@@ -130,17 +158,15 @@ contract Components is IComponents, ERC1155, Ownable {
     function purchaseIndicator(uint256 _indicatorID) external override {
         require(!hasPurchasedIndicator(msg.sender, _indicatorID), "Components: already purchased this indicator.");
 
-        address indicatorAddress = indicators[_indicatorID];
+        bytes32 indicatorAddress = indicators[_indicatorID];
         // Transfer to xTGEN if NFT is in marketplace escrow.
         address recipient = (components[indicatorAddress].owner == marketplace) ? marketplace : components[indicatorAddress].owner;
 
-        hasPurchasedComponent[msg.sender][indicatorAddress] = true;
+        hasPurchasedComponent[msg.sender][_indicatorID] = true;
 
         TGEN.safeTransferFrom(msg.sender, address(this), components[indicatorAddress].price);
         TGEN.safeTransfer(xTGEN, components[indicatorAddress].price.mul(protocolFee).div(10000));
         TGEN.safeTransfer(recipient, components[indicatorAddress].price.mul(10000 - protocolFee).div(10000));
-
-        IIndicator(indicatorAddress).registerUser(msg.sender);
 
         emit PurchasedIndicator(msg.sender, indicatorAddress);
     }
@@ -152,17 +178,15 @@ contract Components is IComponents, ERC1155, Ownable {
     function purchaseComparator(uint256 _comparatorID) external override {
         require(!hasPurchasedComparator(msg.sender, _comparatorID), "Components: already purchased this comparator.");
 
-        address comparatorAddress = indicators[_comparatorID];
+        bytes32 comparatorAddress = indicators[_comparatorID];
         // Transfer to xTGEN if NFT is in marketplace escrow.
         address recipient = (components[comparatorAddress].owner == marketplace) ? marketplace : components[comparatorAddress].owner;
 
-        hasPurchasedComponent[msg.sender][comparatorAddress] = true;
+        hasPurchasedComponent[msg.sender][_comparatorID] = true;
 
         TGEN.safeTransferFrom(msg.sender, address(this), components[comparatorAddress].price);
         TGEN.safeTransfer(xTGEN, components[comparatorAddress].price.mul(protocolFee).div(10000));
         TGEN.safeTransfer(recipient, components[comparatorAddress].price.mul(10000 - protocolFee).div(10000));
-
-        IComparator(comparatorAddress).registerUser(msg.sender);
 
         emit PurchasedComparator(msg.sender, comparatorAddress);
     }
@@ -173,15 +197,13 @@ contract Components is IComponents, ERC1155, Ownable {
      * @param _indicatorID ID of the indicator.
      */
     function markIndicatorAsDefault(uint256 _indicatorID) external override {
-        address indicatorAddress = indicators[_indicatorID];
+        bytes32 indicatorAddress = indicators[_indicatorID];
 
         require(msg.sender == components[indicatorAddress].owner, "Components: only the indicator owner can call this function.");
         require(!isDefaultComponent[indicatorAddress], "Components: already marked as default.");
 
         isDefaultComponent[indicatorAddress] = true;
         components[indicatorAddress].isDefault = true;
-
-        IIndicator(indicatorAddress).markAsDefault();
 
         emit MarkedIndicatorAsDefault(indicatorAddress);
     }
@@ -192,15 +214,13 @@ contract Components is IComponents, ERC1155, Ownable {
      * @param _comparatorID ID of the comparator.
      */
     function markComparatorAsDefault(uint256 _comparatorID) external override {
-        address comparatorAddress = comparators[_comparatorID];
+        bytes32 comparatorAddress = comparators[_comparatorID];
 
         require(msg.sender == components[comparatorAddress].owner, "Components: only the comparator owner can call this function.");
         require(!isDefaultComponent[comparatorAddress], "Components: already marked as default.");
 
         isDefaultComponent[comparatorAddress] = true;
         components[comparatorAddress].isDefault = true;
-
-        IComparator(comparatorAddress).markAsDefault();
 
         emit MarkedComparatorAsDefault(comparatorAddress);
     }
@@ -223,7 +243,7 @@ contract Components is IComponents, ERC1155, Ownable {
 
         // Update ownership data.
         components[tokenIDs[id]].owner = to;
-        hasPurchasedComponent[to][tokenIDs[id]] = true;
+        hasPurchasedComponent[to][id] = true;
 
         _safeTransferFrom(from, to, id, amount, data);
     }
@@ -237,13 +257,12 @@ contract Components is IComponents, ERC1155, Ownable {
      * @dev Publishes the indicator to the platform.
      * @notice This function can only be called by the deployer of this contract.
      * @notice Assumes the indicator contract has already been deployed and has the same 'isDefault' status.
-     * @param _indicator Address of the indicator.
+     * @param _indicator Address of the indicator on the Tradegen blockchain.
      * @param _owner Address of the indicator's owner.
      * @param _isDefault Whether the indicator is a default indicator.
      * @param _price Price (in TGEN) for an instance of this indicator.
      */
-    function publishIndicator(address _indicator, address _owner, bool _isDefault, uint256 _price) external onlyOwner {
-        require(_indicator != address(0), "Components: invalid address for indicator.");
+    function publishIndicator(bytes32 _indicator, address _owner, bool _isDefault, uint256 _price) external onlyOwner {
         require(_owner != address(0), "Components: invalid address for owner.");
         require(_price >= 0, "Components: price must be positive.");
 
@@ -251,7 +270,7 @@ contract Components is IComponents, ERC1155, Ownable {
             isDefaultComponent[_indicator] = true;
         }
 
-        hasPurchasedComponent[_owner][_indicator] = true;
+        hasPurchasedComponent[_owner][components[_indicator].tokenID] = true;
         indicators[numberOfIndicators] = _indicator;
         tokenIDs[numberOfIndicators.add(numberOfComparators)] = _indicator;
         components[_indicator] = Component({
@@ -273,13 +292,12 @@ contract Components is IComponents, ERC1155, Ownable {
      * @dev Publishes the comparator to the platform.
      * @notice This function can only be called by the deployer of this contract.
      * @notice Assumes the comparator contract has already been deployed and has the same 'isDefault' status.
-     * @param _comparator Address of the comparator.
+     * @param _comparator Address of the comparator on the Tradegen blockchain.
      * @param _owner Address of the comparator's owner.
      * @param _isDefault Whether the comparator is a default comparator.
      * @param _price Price (in TGEN) for an instance of this comparator.
      */
-    function publishComparator(address _comparator, address _owner, bool _isDefault, uint256 _price) external onlyOwner {
-        require(_comparator != address(0), "Components: invalid address for comparator.");
+    function publishComparator(bytes32 _comparator, address _owner, bool _isDefault, uint256 _price) external onlyOwner {
         require(_owner != address(0), "Components: invalid address for owner.");
         require(_price >= 0, "Components: price must be positive.");
 
@@ -287,7 +305,7 @@ contract Components is IComponents, ERC1155, Ownable {
             isDefaultComponent[_comparator] = true;
         }
 
-        hasPurchasedComponent[_owner][_comparator] = true;
+        hasPurchasedComponent[_owner][components[_comparator].tokenID] = true;
         comparators[numberOfComparators] = _comparator;
         tokenIDs[numberOfComparators.add(numberOfIndicators)] = _comparator;
         components[_comparator] = Component({
@@ -321,11 +339,11 @@ contract Components is IComponents, ERC1155, Ownable {
 
     /* ========== EVENTS ========== */
 
-    event PurchasedIndicator(address indexed user, address indicator);
-    event PurchasedComparator(address indexed user, address comparator);
-    event PublishedIndicator(address indicator, address owner, bool isDefault, uint256 price);
-    event PublishedComparator(address comparator, address owner, bool isDefault, uint256 price);
-    event MarkedIndicatorAsDefault(address indicator);
-    event MarkedComparatorAsDefault(address comparator);
+    event PurchasedIndicator(address indexed user, bytes32 indicator);
+    event PurchasedComparator(address indexed user, bytes32 comparator);
+    event PublishedIndicator(bytes32 indicator, address owner, bool isDefault, uint256 price);
+    event PublishedComparator(bytes32 comparator, address owner, bool isDefault, uint256 price);
+    event MarkedIndicatorAsDefault(bytes32 indicator);
+    event MarkedComparatorAsDefault(bytes32 comparator);
     event UpdatedProtocolFee(uint256 newFee);
 }

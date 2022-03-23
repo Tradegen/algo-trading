@@ -11,7 +11,6 @@ import './TradingBot.sol';
 
 // Interfaces
 import './interfaces/ITradingBot.sol';
-import './interfaces/IExternalContractFactory.sol';
 
 contract TradingBots is ERC1155 {
     using SafeMath for uint256;
@@ -21,6 +20,7 @@ contract TradingBots is ERC1155 {
         bool created;
         bool initialized;
         bool generatedRules;
+        bool registered;
         string name;
         string symbol;
         uint256 mintFee;
@@ -34,19 +34,15 @@ contract TradingBots is ERC1155 {
         uint256[] serializedExitRules;
     }
 
-    address public immutable priceAggregatorRouter;
     address public immutable components;
-    IExternalContractFactory public immutable externalContractFactory;
 
     uint256 public numberOfTradingBots;
     // Token ID => trading bot address.
     mapping (uint256 => address) public tradingBots;
     mapping (uint256 => TradingBotInfo) public tradingBotInfos;
 
-    constructor(address _priceAggregatorRouter, address _components, address _externalContractFactory) {
-        priceAggregatorRouter = _priceAggregatorRouter;
+    constructor(address _components) {
         components = _components;
-        externalContractFactory = IExternalContractFactory(_externalContractFactory);
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
@@ -54,7 +50,7 @@ contract TradingBots is ERC1155 {
     /**
      * @dev Stores the trading bot parameters in a struct before creating the bot.
      * @notice First step.
-     * @notice Use 4 steps to create/initialize bot to avoid 'stack-too-deep' error.
+     * @notice Use 5 steps to create/initialize bot to avoid 'stack-too-deep' error.
      * @param _name Name of the trading bot.
      * @param _symbol Symbol of the trading bot.
      * @param _mintFee Fee to charge when users mint a synthetic bot token. Denominated in 10000.
@@ -79,6 +75,7 @@ contract TradingBots is ERC1155 {
             created: false,
             initialized: false,
             generatedRules: false,
+            registered: false,
             name: _name,
             symbol: _symbol,
             mintFee: _mintFee,
@@ -101,16 +98,14 @@ contract TradingBots is ERC1155 {
     /**
      * @dev Creates the trading bot contract.
      * @notice Second step.
-     * @notice Use 4 steps to create/initialize bot to avoid 'stack-too-deep' error.
+     * @notice Use 5 steps to create/initialize bot to avoid 'stack-too-deep' error.
      * @param _tokenID NFT ID of the trading bot.
      */
     function createTradingBot(uint256 _tokenID) external {
         require(msg.sender == tradingBotInfos[_tokenID].owner, "TradingBots: only the trading bot owner can call this function.");
         require(!tradingBotInfos[_tokenID].created, "TradingBots: trading bot already created.");
 
-        (address botPerformanceOracleAddress, address syntheticBotTokenAddress) = externalContractFactory.createContracts();
-
-        tradingBots[_tokenID] = address(new TradingBot(msg.sender, syntheticBotTokenAddress, components, priceAggregatorRouter, botPerformanceOracleAddress));
+        tradingBots[_tokenID] = address(new TradingBot(msg.sender, components));
         tradingBotInfos[_tokenID].created = true;
 
         emit CreatedTradingBot(tradingBots[_tokenID]);
@@ -119,7 +114,7 @@ contract TradingBots is ERC1155 {
     /**
      * @dev Initializes the trading bot contract.
      * @notice Third step.
-     * @notice Use 4 steps to create/initialize bot to avoid 'stack-too-deep' error.
+     * @notice Use 5 steps to create/initialize bot to avoid 'stack-too-deep' error.
      * @param _tokenID NFT ID of the trading bot.
      */
     function initializeTradingBot(uint256 _tokenID) external {
@@ -138,8 +133,8 @@ contract TradingBots is ERC1155 {
 
     /**
      * @dev Generates entry/exit rules for the trading bot contract.
-     * @notice Last step.
-     * @notice Use 4 steps to create/initialize bot to avoid 'stack-too-deep' error.
+     * @notice Fourth step.
+     * @notice Use 5 steps to create/initialize bot to avoid 'stack-too-deep' error.
      * @param _tokenID NFT ID of the trading bot.
      */
     function generateRulesForTradingBot(uint256 _tokenID) external {
@@ -155,6 +150,27 @@ contract TradingBots is ERC1155 {
         tradingBotInfos[_tokenID].generatedRules = true;
 
         emit GeneratedRulesForTradingBot(tradingBots[_tokenID]);
+    }
+
+    /**
+     * @dev Registers the trading bot on the custom Tradegen blockchain.
+     * @notice A relayer listens for the RegisteredTradingBot event and sends a transaction to Tradegen blockchain to create a copy of the bot.
+     * @notice Last step.
+     * @notice Use 5 steps to create/initialize bot to avoid 'stack-too-deep' error.
+     * @param _tokenID NFT ID of the trading bot.
+     */
+    function registerTradingBot(uint256 _tokenID) external {
+        TradingBotInfo memory info = tradingBotInfos[_tokenID];
+
+        require(msg.sender == info.owner, "TradingBots: only the trading bot owner can call this function.");
+        require(info.created, "TradingBots: trading bot contract needs to be created first.");
+        require(info.initialized, "TradingBots: trading bot contract needs to be initialized first.");
+        require(info.generatedRules, "TradingBots: trading bot already generated rules.");
+        require(!info.registered, "TradingBots: trading bot already registered.");
+
+        tradingBotInfos[_tokenID].registered = true;
+
+        emit RegisteredTradingBot(info.timeframe, info.maxTradeDuration, info.profitTarget, info.stopLoss, info.tradedAsset, info.serializedEntryRules, info.serializedExitRules);
     }
 
     /**
@@ -205,5 +221,6 @@ contract TradingBots is ERC1155 {
     event CreatedTradingBot(address tradingBot);
     event InitializedTradingBot(address tradingBot);
     event GeneratedRulesForTradingBot(address tradingBot);
+    event RegisteredTradingBot(uint256 timeframe, uint256 maxTradeDuration, uint256 profitTarget, uint256 stopLoss, address tradedAsset, uint256[] serializedEntryRules, uint256[] serializedExitRules);
     event UpdatedOwner(uint256 tradingBotID, address newOwner);
 }

@@ -5,7 +5,7 @@ pragma solidity ^0.8.3;
 interface IComponents {
 
     struct Component {
-        address componentAddress;
+        bytes32 componentAddress; // Address of indicator/comparator on Tradegen blockchain.
         address owner;
         uint256 tokenID;
         bool isIndicator;
@@ -16,16 +16,16 @@ interface IComponents {
     // Views
 
     /**
-     * @dev Given the address of a component, returns the component's info.
-     * @param _component Address of the indicator/comparator.
-     * @return (address, address, uint256, bool, bool, uint256) Address of the indicator/comparator,
+     * @dev Given the ID of a component, returns the component's info.
+     * @param _componentID ID of the indicator/comparator.
+     * @return (address, address, uint256, bool, bool, uint256) Address of the indicator/comparator on Tradegen blockchain,
      *                                                          address of the owner,
      *                                                          token ID,
      *                                                          whether the component is an indicator,
      *                                                          whether the indicator/comparator is default,
      *                                                          and price of the indicator/comparator.
      */
-    function getComponentInfo(address _component) external view returns (address, address, uint256, bool, bool, uint256);
+    function getComponentInfo(uint256 _componentID) external view returns (bytes32, address, uint256, bool, bool, uint256);
 
     /**
      * @dev Returns whether the user has purchased the given indicator.
@@ -46,20 +46,34 @@ interface IComponents {
     function hasPurchasedComparator(address _user, uint256 _comparatorID) external view returns (bool);
 
     /**
-     * @dev Returns the address of the given indicator.
-     * @notice Returns address(0) if the indicator does not exist.
+     * @dev Returns the address of the given indicator on the Tradegen blockchain.
+     * @notice Returns empty bytes if the indicator does not exist.
      * @param _indicatorID ID of the indicator.
-     * @return (address) Address of the indicator.
+     * @return (bytes32) Address of the indicator.
      */
-    function getIndicatorAddress(uint256 _indicatorID) external view returns (address);
+    function getIndicatorAddress(uint256 _indicatorID) external view returns (bytes32);
 
     /**
-     * @dev Returns the address of the given comparator.
+     * @dev Returns the address of the given comparator on the Tradegen blockchain.
      * @notice Returns address(0) if the comparator does not exist.
      * @param _comparatorID ID of the comparator.
-     * @return (address) Address of the comparator.
+     * @return (bytes32) Address of the comparator.
      */
-    function getComparatorAddress(uint256 _comparatorID) external view returns (address);
+    function getComparatorAddress(uint256 _comparatorID) external view returns (bytes32);
+
+    /**
+     * @dev Checks whether the given user purchased each indicator/comparator used in the given array of serialized rules.
+     * @notice Bits 0-15: empty (expected to be 0's).
+    *         Bits 16-31: Comparator ID.
+    *         Bits 32-47: First indicator ID.
+    *         Bits 48-63: Second indicator ID.
+    *         Bits 64-159: First indicator params; serialized array of 6 elements, 16 bits each.
+    *         Bits 160-255: Second indicator params; serialized array of 6 elements, 16 bits each.
+     * @param _user Address of the user.
+     * @param _serializedRules Array of entry/exit rules, with the info for each rule serialized as a uint256.
+     * @return (bool) Whether the user purchased each indicator/comparator used.
+     */
+    function checkRules(address _user, uint256[] memory _serializedRules) external view returns (bool);
 
     // Mutative
 

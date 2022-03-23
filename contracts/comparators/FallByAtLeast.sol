@@ -15,15 +15,11 @@ contract FallByAtLeast is IComparator {
 
     address public immutable componentsAddress;
 
-    constructor(address _componentsAddress, bool _isDefault) {
+    constructor(address _componentsAddress) {
         require(_componentsAddress != address(0), "Comparator: invalid address for Components contract.");
 
         componentsAddress = _componentsAddress;
-        isDefault = _isDefault;
     }
-
-    bool public isDefault;
-    mapping(address => bool) public canUse;
 
     uint256 numberOfInstances;
     mapping (uint256 => State) public instances;
@@ -38,16 +34,13 @@ contract FallByAtLeast is IComparator {
     /**
     * @dev Creates an instance of this comparator for the contract calling this function.
     * @notice This function is meant to be called by the TradingBot contract.
-    * @param _tradingBotOwner Address of the trading bot owner.
     * @param _firstIndicatorAddress Address of the comparator's first indicator.
     * @param _secondIndicatorAddress Address of the comparator's second indicator.
     * @param _firstIndicatorInstance Instance number of the first indicator.
     * @param _secondIndicatorInstance Instance number of the second indicator.
     * @return (uint256) Instance number of the comparator.
     */
-    function addTradingBot(address _tradingBotOwner, address _firstIndicatorAddress, address _secondIndicatorAddress, uint256 _firstIndicatorInstance, uint256 _secondIndicatorInstance) external returns (uint256) {
-        require(_tradingBotOwner != address(0), "Comparator: invalid address for trading bot owner.");
-        require(isDefault || canUse[_tradingBotOwner], "Comparator: don't have permission to use this comparator.");
+    function addTradingBot(address _firstIndicatorAddress, address _secondIndicatorAddress, uint256 _firstIndicatorInstance, uint256 _secondIndicatorInstance) external returns (uint256) {
         require(_firstIndicatorAddress != address(0), "Comparator: invalid address for first indicator.");
         require(_secondIndicatorAddress != address(0), "Comparator: invalid address for second indicator.");
         require(_firstIndicatorAddress != _secondIndicatorAddress, "Comparator: indicators are the same.");
@@ -92,35 +85,6 @@ contract FallByAtLeast is IComparator {
         return ((firstIndicatorValues[0].sub(firstIndicatorValues[firstIndicatorValues.length - 1]).mul(1e18).mul(100).div(firstIndicatorValues[0])) >= secondIndicatorValue[0]);
     }
 
-    /* ========== RESTRICTED FUNCTIONS ========== */
-
-    /**
-    * @dev Marks this comparator as a default comparator.
-    * @notice This function can only be called by the Components contract.
-    * @notice Once a comparator is marked as default, it cannot go back to being a purchasable comparator.
-    * @notice If a comparator is marked as default, any trading bot can integrate it for free.
-    */
-    function markAsDefault() external override onlyComponentsContract isNotDefault {
-        isDefault = true;
-
-        emit MarkedAsDefault();
-    }
-
-    /**
-    * @dev Allows the user to use this comparator in trading bots.
-    * @notice This function can only be called by the Components contract.
-    * @notice Meant to be called by the Components contract when a user purchases this comparator.
-    * @param _user Address of the user.
-    */
-    function registerUser(address _user) external override onlyComponentsContract isNotDefault {
-        require(_user != address(0), "Comparator: invalid address for user.");
-        require(!canUse[_user], "Comparator: already can use this indicator.");
-
-        canUse[_user] = true;
-
-        emit RegisteredUser(_user);
-    }
-
     /* ========== MODIFIERS ========== */
 
     modifier onlyTradingBot(uint256 _instance) {
@@ -132,12 +96,6 @@ contract FallByAtLeast is IComparator {
     modifier onlyComponentsContract() {
         require(msg.sender == componentsAddress,
                 "Comparator: Only the Components contract can call this function.");
-        _;
-    }
-
-    modifier isNotDefault() {
-        require(!isDefault,
-                "Comparator: Indicator needs to be non-default to call this function.");
         _;
     }
 }
