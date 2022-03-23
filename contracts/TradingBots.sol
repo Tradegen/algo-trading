@@ -11,6 +11,7 @@ import './TradingBot.sol';
 
 // Interfaces
 import './interfaces/ITradingBot.sol';
+import './interfaces/IPriceAggregatorRouter.sol';
 
 contract TradingBots is ERC1155 {
     using SafeMath for uint256;
@@ -32,14 +33,16 @@ contract TradingBots is ERC1155 {
     }
 
     address public immutable components;
+    IPriceAggregatorRouter public immutable priceAggregatorRouter;
 
     uint256 public numberOfTradingBots;
     // Token ID => trading bot address.
     mapping (uint256 => address) public tradingBots;
     mapping (uint256 => TradingBotInfo) public tradingBotInfos;
 
-    constructor(address _components) {
+    constructor(address _components, address _priceAggregatorRouter) {
         components = _components;
+        priceAggregatorRouter = IPriceAggregatorRouter(_priceAggregatorRouter);
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
@@ -64,7 +67,7 @@ contract TradingBots is ERC1155 {
         require(_profitTarget > 0, "TradingBots: profit target must be above 0.");
         require(_stopLoss > 0, "TradingBots: stop loss must be above 0.");
         require(_stopLoss < 10000, "TradingBots: stop loss must be below 10000.");
-        require(_tradedAsset != address(0), "TradingBots: invalid address for traded asset.");
+        require(priceAggregatorRouter.getPriceAggregator(_tradedAsset) != address(0), "TradingBots: asset not supported.");
         require(_serializedEntryRules.length > 0, "TradingBots: must have at least 1 entry rule.");
 
         tradingBotInfos[numberOfTradingBots] = TradingBotInfo({
