@@ -102,4 +102,20 @@ interface IComponents {
      * @param _comparatorID ID of the comparator.
      */
     function markComparatorAsDefault(uint256 _comparatorID) external;
+
+    /**
+     * @dev Updates the price of the given indicator.
+     * @notice This function can only be called by the indicator's owner.
+     * @param _indicatorID ID of the indicator.
+     * @param _newPrice New price of the indicator, in TGEN.
+     */
+    function updateIndicatorPrice(uint256 _indicatorID, uint256 _newPrice) external;
+
+    /**
+     * @dev Updates the price of the given comparator.
+     * @notice This function can only be called by the comparator's owner.
+     * @param _comparatorID ID of the comparator.
+     * @param _newPrice New price of the comparator, in TGEN.
+     */
+    function updateComparatorPrice(uint256 _comparatorID, uint256 _newPrice) external;
 }

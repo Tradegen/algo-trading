@@ -120,6 +120,8 @@ contract PriceAggregator is IPriceAggregator, Ownable {
             prices[numberOfCandlesticks] = currentCandlestick;
             numberOfCandlesticks = numberOfCandlesticks.add(1);
 
+            emit NewCandlestick(asset, currentCandlestick.startingTimestamp, currentCandlestick.endingTimestamp, currentCandlestick.open, currentCandlestick.close, currentCandlestick.high, currentCandlestick.low);
+
             // Initialize the next candlestick.
             currentCandlestick = CandlestickUtils.Candlestick({
                 asset: asset,
@@ -164,4 +166,5 @@ contract PriceAggregator is IPriceAggregator, Ownable {
 
     event UpdatedPriceFeed(uint256 latestPrice);
     event SetOracle(address oracleAddress);
+    event NewCandlestick(address asset, uint256 startingTimestamp, uint256 endingTimestamp, uint256 open, uint256 close, uint256 high, uint256 low);
 }
