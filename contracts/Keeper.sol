@@ -2,9 +2,6 @@
 
 pragma solidity ^0.8.3;
 
-// Openzeppelin.
-import "./openzeppelin-solidity/contracts/SafeMath.sol";
-
 // Internal references.
 import './interfaces/IKeeperRegistry.sol';
 import './interfaces/IIndicator.sol';
@@ -15,8 +12,6 @@ import './interfaces/ITradingBot.sol';
 import './interfaces/IKeeper.sol';
 
 contract Keeper is IKeeper {
-    using SafeMath for uint256;
-
     IKeeperRegistry public immutable keeperRegistry;
     address public immutable owner;
     address public dedicatedCaller;
