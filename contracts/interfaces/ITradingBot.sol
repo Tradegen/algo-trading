@@ -35,6 +35,11 @@ interface ITradingBot {
     */
     function getTradingBotParameters() external view returns (uint256, uint256, uint256, uint256, address);
 
+    /**
+    * @notice Returns whether the trading bot can be updated.
+    */
+    function canUpdate() external view returns (bool);
+
     // Mutative
 
     /**
@@ -67,4 +72,6 @@ interface ITradingBot {
     * @param _serializedExitRules An array of exit rules; each exit rule is packed into a uint256.
     */
     function generateRules(uint256[] memory _serializedEntryRules, uint256[] memory _serializedExitRules) external;
+
+    function update() external returns (bool);
 }

@@ -25,4 +25,13 @@ interface IKeeper {
     * @dev Charges fee after performing job.
     */
     function performUpkeep(uint256 _jobID) external;
+
+    /* ========== RESTRICTED FUNCTIONS ========== */
+
+    /**
+    * @notice Updates the keeper's dedicated caller.
+    * @dev This function can only be called by the KeeperRegistry contract.
+    * @param _newCaller Address of the new dedicated caller.
+    */
+    function updateDedicatedCaller(address _newCaller) external;
 }

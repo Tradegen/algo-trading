@@ -19,6 +19,11 @@ interface IComparator {
     */
     function getName() external pure returns (string memory);
 
+    /**
+    * @notice Returns whether the comparator can be updated.
+    */
+    function canUpdate() external view returns (bool);
+
     /* ========== MUTATIVE FUNCTIONS ========== */
 
     /**
@@ -35,10 +40,10 @@ interface IComparator {
     /**
     * @dev Returns whether the comparator's conditions are met for the given instance.
     * @notice This function updates the state of the given instance.
-    * @param _instance Instance number of this comparator.
+    * @param _instanceID Instance ID of this comparator.
     * @return (bool) Whether the comparator's conditions are met after the latest price feed update.
     */
-    function checkConditions(uint256 _instance) external returns (bool);
+    function checkConditions(uint256 _instanceID) external returns (bool);
 
     /* ========== EVENTS ========== */
 

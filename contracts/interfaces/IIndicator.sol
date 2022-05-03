@@ -35,6 +35,11 @@ interface IIndicator {
     */
     function getHistory(uint256 _instance) external view returns (uint256[] memory);
 
+    /**
+    * @notice Returns whether the indicator can be updated.
+    */
+    function canUpdate() external view returns (bool);
+
     /* ========== MUTATIVE FUNCTIONS ========== */
 
     /**
@@ -49,11 +54,11 @@ interface IIndicator {
 
     /**
     * @dev Updates the indicator's state for the given instance, based on the latest price feed update.
-    * @notice This function is meant to be called by the TradingBot contract.
-    * @param _instance Instance number of this indicator.
-    * @param _latestPrice The latest price from oracle price feed.
+    * @notice This function can only be called by the dedicated keeper of this instance.
+    * @param _instanceID Instance ID of this indicator.
+    * @return bool Whether the indicator was updated successfully.
     */
-    function update(uint256 _instance, CandlestickUtils.Candlestick memory _latestPrice) external;
+    function update(uint256 _instanceID) external returns (bool);
 
     /* ========== EVENTS ========== */
 

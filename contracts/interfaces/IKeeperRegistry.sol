@@ -10,6 +10,7 @@ interface IKeeperRegistry {
         address owner;
         address keeper;
         address target;
+        uint256 instanceID;
     }
 
     struct Keeper {
@@ -24,10 +25,11 @@ interface IKeeperRegistry {
 
     /**
     * @notice Returns the upkeep info for the given job ID.
+    * @dev Instance ID is not used if the target contract is a trading bot.
     * @param _jobID The ID of the job.
-    * @return (bool, uint8, address, address, address) Whether the job is active, the job type, the job's owner, the job's keeper, and the target contract address.
+    * @return (bool, uint8, address, address, address, uint256) Whether the job is active, the job type, the job's owner, the job's keeper, the target contract address, and the instance ID.
     */
-    function getUpkeepInfo(uint256 _jobID) external view returns (bool, uint8, address, address, address);
+    function getUpkeepInfo(uint256 _jobID) external view returns (bool, uint8, address, address, address, uint256);
 
     /**
     * @notice Returns the keeper info for the given keeper contract.
@@ -37,9 +39,14 @@ interface IKeeperRegistry {
     function getKeeperInfo(address _keeper) external view returns (address, address, address, uint256, uint256[] memory);
 
     /**
-    * @notice Returns the amount of funds available for the given job.
+    * @notice Returns whether the given job has enough funds to pay the keeper fee.
     */
-    function checkBudget(uint256 _jobID) external view returns (uint256);
+    function checkBudget(uint256 _jobID) external view returns (bool);
+
+    /**
+    * @notice Returns the amount of funds available for the job.
+    */
+    function availableFunds(uint256 _jobID) external view returns (uint256);
 
     /**
     * @notice Returns the amount of fees available for the given payee.
@@ -106,8 +113,9 @@ interface IKeeperRegistry {
     * @param _jobType The job type; 0 = indicator, 1 = comparator, 2 = trading bot.
     * @param _keeper Address of the keeper contract.
     * @param _target Address of the indicator/comparator/bot contract.
+    * @param _instanceID Instance ID of the indicator/comparator.
     */
-    function createJob(uint8 _jobType, address _keeper, address _target) external;
+    function createJob(uint8 _jobType, address _keeper, address _target, uint256 _instanceID) external;
 
     /**
     * @notice Cancels a job.
