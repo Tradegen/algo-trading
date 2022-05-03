@@ -44,7 +44,18 @@ interface IKeeperRegistry {
     /**
     * @notice Returns the amount of fees available for the given payee.
     */
-    function availableFees(address _payee) external view returns (uint256); 
+    function availableFees(address _payee) external view returns (uint256);
+
+    /**
+    * @notice Returns the address of the given job's keeper contract.
+    */
+    function getJobKeeper(uint256 _jobID) external view returns (address);
+
+    /**
+    * @notice Returns ID of each job the given keeper is responsible for.
+    * @dev Returns an empty array if the keeper is not registered or doesn't have any jobs.
+    */
+    function getAvailableJobs(address _keeper) external view returns (uint256[] memory);
 
     /* ========== MUTATIVE FUNCTIONS ========== */
 
