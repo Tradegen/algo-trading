@@ -19,14 +19,19 @@ contract KeeperRegsitry is IKeeperRegistry, Ownable {
     using SafeERC20 for IERC20;
 
     uint256 public constant MAX_JOBS_PER_KEEPER = 10;
+    uint256 public constant MAX_KEEPER_FEE = 1e21;
+    uint256 public constant MAX_FEE_INCREASE = 1e19;
+    uint256 public constant MIN_TIME_BETWEEN_FEE_CHANGES = 1 days;
 
     IERC20 public immutable feeToken;
 
     mapping (uint256 => Upkeep) public upkeeps;
-    mapping (address => Keeper) public keepers;
+    mapping (address => KeeperInfo) public keepers;
     mapping (uint256 => uint256) public override availableFunds;
     mapping (address => uint256) public override availableFees;
     mapping (address => address) public userToKeeper;
+    mapping (address => uint256[]) public keeperJobs;
+    mapping (address => uint256) public lastFeeChange;
     uint256 public numberOfJobs;
 
     constructor(address _feeToken) Ownable() {
@@ -56,11 +61,11 @@ contract KeeperRegsitry is IKeeperRegistry, Ownable {
     */
     function getKeeperInfo(address _keeper) external view override returns (address, address, address, uint256, uint256[] memory) {
         // Gas savings.
-        Keeper memory keeper = keepers[_keeper];
+        KeeperInfo memory keeper = keepers[_keeper];
 
-        uint256[] memory jobs = new uint256[](keeper.jobs.length);
+        uint256[] memory jobs = new uint256[](keeperJobs[_keeper].length);
         for (uint256 i = 0; i < jobs.length; i++) {
-            jobs[i] = keeper.jobs[i];
+            jobs[i] = keeperJobs[_keeper][i];
         }
 
         return (keeper.owner, keeper.caller, keeper.payee, keeper.fee, jobs);
@@ -88,12 +93,9 @@ contract KeeperRegsitry is IKeeperRegistry, Ownable {
     * @dev Returns an empty array if the keeper is not registered or doesn't have any jobs.
     */
     function getAvailableJobs(address _keeper) external view override returns (uint256[] memory) {
-        // Gas savings.
-        Keeper memory keeper = keepers[_keeper];
-
-        uint256[] memory jobs = new uint256[](keeper.jobs.length);
+        uint256[] memory jobs = new uint256[](keeperJobs[_keeper].length);
         for (uint256 i = 0; i < jobs.length; i++) {
-            jobs[i] = keeper.jobs[i];
+            jobs[i] = keeperJobs[_keeper][i];
         }
 
         return jobs;
@@ -133,7 +135,22 @@ contract KeeperRegsitry is IKeeperRegistry, Ownable {
     * @param _fee Fee to charge whenever an upkeep is performed.
     */
     function registerKeeper(address _caller, address _payee, uint256 _fee) external override {
-        //TODO
+        require(userToKeeper[msg.sender] == address(0), "KeeperRegistry: Already have a keeper contract.");
+        require(_caller != address(0), "KeeperRegistry: Invalid address for _caller.");
+        require(_payee != address(0), "KeeperRegistry: Invalid address for _payee.");
+        require(_fee <= MAX_KEEPER_FEE, "KeeperRegistry: Keeper fee is too high.");
+
+        address keeperAddress = address(new Keeper(msg.sender, _caller));
+
+        userToKeeper[msg.sender] = keeperAddress;
+        keepers[keeperAddress] = KeeperInfo({
+            owner: msg.sender,
+            caller: _caller,
+            payee: _payee,
+            fee: _fee
+        });
+
+        emit RegisteredKeeper(keeperAddress, msg.sender, _caller, _payee, _fee);
     }
 
     /**
@@ -172,7 +189,13 @@ contract KeeperRegsitry is IKeeperRegistry, Ownable {
     * @param _instanceID Instance ID of the indicator/comparator.
     */
     function createJob(uint8 _jobType, address _keeper, address _target, uint256 _instanceID) external override {
-        //TODO
+        require(_jobType >= 0 && _jobType <= 2, "KeeperRegistry: Invalid job type.");
+        require(keepers[_keeper].owner != address(0), "KeeperRegistry: Invalid keeper.");
+        
+        //TODO: Check if target is valid indicator/comparator/bot
+        //TODO: Check if msg.sender owns the instance ID
+        //TODO: Check that there's no existing keeper for the target/instance.
+        //TODO: Check that keeper has room for another job.
     }
 
     /**
@@ -185,9 +208,21 @@ contract KeeperRegsitry is IKeeperRegistry, Ownable {
         upkeeps[_jobID].isActive = false;
         upkeeps[_jobID].owner = address(0);
 
-        _withdrawFunds(msg.sender, _jobID, availableFunds[_jobID]);
+        uint256 index;
+        address keeper = upkeeps[_jobID].keeper;
+        uint256 length = keeperJobs[keeper].length;
+        for (; index < length; index++) {
+            if (keeperJobs[keeper][index] == _jobID) {
+                break;
+            }
+        }
 
-        //TODO: Remove jobID from keeper's list of jobs.
+        require(index < length, "KeeperRegistry: Job not found.");
+
+        keeperJobs[keeper][index] = keeperJobs[keeper][length.sub(1)];
+        delete keeperJobs[keeper][length.sub(1)];
+
+        _withdrawFunds(msg.sender, _jobID, availableFunds[_jobID]);
 
         emit CanceledJob(_jobID);
     }
@@ -198,8 +233,18 @@ contract KeeperRegsitry is IKeeperRegistry, Ownable {
     * @param _keeper Address of the keeper contract.
     * @param _newFee The new keeper fee.
     */
-    function updateKeeperFee(address _keeper, uint256 _newFee) external override {
-        //TODO
+    function updateKeeperFee(address _keeper, uint256 _newFee) external override onlyKeeperOwner(_keeper) {
+        require(_newFee <= MAX_KEEPER_FEE, "KeeperRegistry: New fee is too high.");
+        require(block.timestamp.sub(lastFeeChange[_keeper]) >= MIN_TIME_BETWEEN_FEE_CHANGES, "KeeperRegistry: Not enough time between fee changes.");
+
+        if (_newFee > keepers[_keeper].fee) {
+            require(_newFee.sub(keepers[_keeper].fee) <= MAX_FEE_INCREASE, "KeeperRegistry: Fee increase is too high.");
+        }
+
+        keepers[_keeper].fee = _newFee;
+        lastFeeChange[_keeper] = block.timestamp;
+
+        emit UpdatedKeeperFee(_keeper, _newFee);
     }
 
     /**
@@ -208,8 +253,15 @@ contract KeeperRegsitry is IKeeperRegistry, Ownable {
     * @dev Transaction will revert if the keeper is not responsible for the given job.
     * @param _jobID The job ID.
     */
-    function chargeFee(uint256 _jobID) external override {
-        //TODO
+    function chargeFee(uint256 _jobID) external override onlyKeeper(_jobID) {
+        address keeper = upkeeps[_jobID].keeper;
+        address payee = keepers[keeper].payee;
+        uint256 fee = keepers[keeper].fee;
+
+        availableFunds[_jobID] = availableFunds[_jobID].sub(fee);
+        availableFees[payee] = availableFees[payee].add(fee);
+
+        emit ChargedFee(_jobID, payee, fee);
     }
 
     /* ========== INTERNAL FUNCTIONS ========== */
@@ -226,6 +278,12 @@ contract KeeperRegsitry is IKeeperRegistry, Ownable {
     modifier onlyJobOwner(uint256 _jobID) {
         require(msg.sender == upkeeps[_jobID].owner,
                 "KeeperRegistry: Only the job owner can call this function.");
+        _;
+    }
+
+    modifier onlyKeeper(uint256 _jobID) {
+        require(msg.sender == upkeeps[_jobID].keeper,
+                "KeeperRegistry: Only the keeper contract can call this function.");
         _;
     }
 
@@ -248,4 +306,7 @@ contract KeeperRegsitry is IKeeperRegistry, Ownable {
     event UpdatedPayee(address keeper, address newPayee);
     event ClaimedFees(address keeper, address payee, uint256 amount);
     event CanceledJob(uint256 jobID);
+    event ChargedFee(uint256 jobID, address payee, uint256 amount);
+    event UpdatedKeeperFee(address keeper, uint256 newFee);
+    event RegisteredKeeper(address keeper, address owner, address dedicatedCaller, address payee, uint256 fee);
 }

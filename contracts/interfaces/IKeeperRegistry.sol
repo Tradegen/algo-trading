@@ -13,12 +13,11 @@ interface IKeeperRegistry {
         uint256 instanceID;
     }
 
-    struct Keeper {
+    struct KeeperInfo {
         address owner;
         address caller;
         address payee;
         uint256 fee;
-        uint256[] jobs;
     }
 
     /* ========== VIEWS ========== */
