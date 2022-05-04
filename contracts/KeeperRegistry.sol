@@ -9,6 +9,8 @@ import "./openzeppelin-solidity/contracts/ERC20/SafeERC20.sol";
 
 // Internal references.
 import './interfaces/IKeeper.sol';
+import './interfaces/IComponentsRegistry.sol';
+import './interfaces/ITradingBotRegistry.sol';
 import './Keeper.sol';
 
 // Inheritance.
@@ -24,6 +26,8 @@ contract KeeperRegsitry is IKeeperRegistry, Ownable {
     uint256 public constant MIN_TIME_BETWEEN_FEE_CHANGES = 1 days;
 
     IERC20 public immutable feeToken;
+    IComponentsRegistry public immutable componentsRegistry;
+    ITradingBotRegistry public immutable tradingBotRegistry;
 
     mapping (uint256 => Upkeep) public upkeeps;
     mapping (address => KeeperInfo) public keepers;
@@ -34,8 +38,10 @@ contract KeeperRegsitry is IKeeperRegistry, Ownable {
     mapping (address => uint256) public lastFeeChange;
     uint256 public numberOfJobs;
 
-    constructor(address _feeToken) Ownable() {
+    constructor(address _feeToken, address _componentsRegsitry, address _tradingBotRegistry) Ownable() {
         feeToken = IERC20(_feeToken);
+        componentsRegistry = IComponentsRegistry(_componentsRegsitry);
+        tradingBotRegistry = ITradingBotRegistry(_tradingBotRegistry);
     }
 
     /* ========== VIEWS ========== */
@@ -191,11 +197,32 @@ contract KeeperRegsitry is IKeeperRegistry, Ownable {
     function createJob(uint8 _jobType, address _keeper, address _target, uint256 _instanceID) external override {
         require(_jobType >= 0 && _jobType <= 2, "KeeperRegistry: Invalid job type.");
         require(keepers[_keeper].owner != address(0), "KeeperRegistry: Invalid keeper.");
+        require(keeperJobs[_keeper].length <= MAX_JOBS_PER_KEEPER, "KeeperRegistry: Keeper does not have room for another job.");
         
-        //TODO: Check if target is valid indicator/comparator/bot
-        //TODO: Check if msg.sender owns the instance ID
-        //TODO: Check that there's no existing keeper for the target/instance.
-        //TODO: Check that keeper has room for another job.
+        // Check if target is valid indicator/comparator/bot.
+        // Check if msg.sender owns the instance ID.
+        // Check that there's no existing keeper for the target/instance.
+        if (_jobType == 0) {
+            require(componentsRegistry.checkInfoForUpkeep(msg.sender, _target, _instanceID), "KeeperRegistry: Invalid info for upkeep.");
+        }
+        else {
+            require(tradingBotRegistry.checkInfoForUpkeep(msg.sender, _target), "KeeperRegistry: Invalid info for upkeep.");
+        }
+
+        uint256 jobID = numberOfJobs.add(1);
+
+        numberOfJobs = jobID;
+        keeperJobs[_keeper].push(jobID);
+        upkeeps[jobID] = Upkeep({
+            isActive: true,
+            jobType: _jobType,
+            owner: msg.sender,
+            keeper: _keeper,
+            target: _target,
+            instanceID: _instanceID
+        });
+
+        emit CreatedJob(_jobType, jobID, msg.sender, _keeper, _target, _instanceID);
     }
 
     /**
@@ -309,4 +336,5 @@ contract KeeperRegsitry is IKeeperRegistry, Ownable {
     event ChargedFee(uint256 jobID, address payee, uint256 amount);
     event UpdatedKeeperFee(address keeper, uint256 newFee);
     event RegisteredKeeper(address keeper, address owner, address dedicatedCaller, address payee, uint256 fee);
+    event CreatedJob(uint8 jobType, uint256 jobID, address owner, address keeper, address target, uint256 instanceID);
 }
