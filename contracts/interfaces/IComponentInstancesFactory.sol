@@ -7,11 +7,10 @@ interface IComponentInstancesFactory {
     /* ========== MUTATIVE FUNCTIONS ========== */
 
     /**
-    * @notice Mints an NFT for the given component instance.
+    * @notice Deploys a ComponentInstances contract and returns the contract's address.
     * @dev This function can only be called by the ComponentRegistry contract.
-    * @param _owner Address of the instance's owner.
-    * @param _price The price, in TGEN, to use the instance.
-    * @param _isDefault Whether the instance is default.
+    * @param _component Address of the indicator/comparator associated with the ComponentInstances NFT.
+    * @return address Address of the deployed ComponentInstances contract.
     */
-    function createInstance(address _owner, uint256 _price, bool _isDefault) external;
+    function createInstance(address _component) external returns (address);
 }
