@@ -13,10 +13,10 @@ interface IComponentInstances {
     /* ========== VIEWS ========== */
 
     /**
-     * @notice Returns the address of the component associated with this contract.
-     * @return (address) Address of the component contract.
+     * @notice Returns the ID of the component associated with this contract.
+     * @return (uint256) ID of the component.
      */
-    function component() external view returns (address);
+    function componentID() external view returns (uint256);
 
     /**
      * @notice Given the ID of an instance, returns the component instance's info.
@@ -45,8 +45,9 @@ interface IComponentInstances {
     * @param _owner Address of the instance's owner.
     * @param _price The price, in TGEN, to use the instance.
     * @param _isDefault Whether the instance is default.
+    * @return uint256 The token ID of the minted component instance.
     */
-    function createInstance(address _owner, uint256 _price, bool _isDefault) external;
+    function createInstance(address _owner, uint256 _price, bool _isDefault) external returns (uint256);
 
     /**
      * @notice Purchases the given component instance.

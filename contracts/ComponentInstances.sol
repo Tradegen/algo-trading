@@ -20,7 +20,7 @@ contract ComponentInstances is IComponentInstances, ERC1155, ReentrancyGuard {
 
     address public immutable componentRegistry;
     IERC20 public immutable feeToken;
-    address public immutable override component;
+    uint256 public immutable override componentID;
 
     // Total number of instances that have been created.
     // When an instance is created, the instance's ID is [numberOfInstances] at the time.
@@ -33,14 +33,13 @@ contract ComponentInstances is IComponentInstances, ERC1155, ReentrancyGuard {
     // (user address => instance ID => whether the user has purchased the instance).
     mapping(address => mapping(uint256 => bool)) public purchasedInstance; 
 
-    constructor(address _componentRegistry, address _feeToken, address _component) {
+    constructor(address _componentRegistry, address _feeToken, uint256 _componentID) {
         require(_componentRegistry != address(0), "ComponentInstances: Invalid address for _componentRegistry.");
         require(_feeToken != address(0), "ComponentInstances: Invalid address for _feeToken.");
-        require(_component != address(0), "ComponentInstances: Invalid address for _component.");
 
         componentRegistry = _componentRegistry;
         feeToken = IERC20(_feeToken);
-        component = _component;
+        componentID = _componentID;
     }
 
     /* ========== VIEWS ========== */
@@ -79,8 +78,9 @@ contract ComponentInstances is IComponentInstances, ERC1155, ReentrancyGuard {
     * @param _owner Address of the instance's owner.
     * @param _price The price, in TGEN, to use the instance.
     * @param _isDefault Whether the instance is default.
+    * @return uint256 The token ID of the minted component instance.
     */
-    function createInstance(address _owner, uint256 _price, bool _isDefault) external override onlyComponentRegistry {
+    function createInstance(address _owner, uint256 _price, bool _isDefault) external override onlyComponentRegistry returns (uint256) {
         uint256 tokenID = numberOfInstances.add(1);
 
         numberOfInstances = numberOfInstances.add(1);
@@ -96,14 +96,16 @@ contract ComponentInstances is IComponentInstances, ERC1155, ReentrancyGuard {
         _mint(_owner, tokenID, 1, "");
 
         // Gas savings.
-        uint256 fee = IComponent(component).instanceCreationFee();
-        address componentOwner = IComponent(component).componentOwner();
+        uint256 fee = IComponent(componentRegistry).instanceCreationFee(componentID);
+        address componentOwner = IComponent(componentRegistry).componentOwner(componentID);
 
         // Transfer the creation fee to the component owner.
         feeToken.safeTransferFrom(msg.sender, address(this), fee);
         feeToken.safeTransfer(componentOwner, fee);
 
         emit CreatedInstance(tokenID, _owner, fee, componentOwner, _price, _isDefault);
+
+        return tokenID;
     }
 
     /**
@@ -193,5 +195,4 @@ contract ComponentInstances is IComponentInstances, ERC1155, ReentrancyGuard {
     event PurchasedInstance(address user, uint256 instanceID, uint256 price);
     event MarkedInstanceAsDefault(uint256 instanceID);
     event UpdatedInstancePrice(uint256 instanceID, uint256 newPrice);
-    event UpdatedComponentOwner(address newOwner);
 }

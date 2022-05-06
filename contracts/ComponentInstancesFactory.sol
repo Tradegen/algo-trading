@@ -25,13 +25,13 @@ contract ComponentInstancesFactory is IComponentInstancesFactory {
     /**
     * @notice Deploys a ComponentInstances contract and returns the contract's address.
     * @dev This function can only be called by the ComponentRegistry contract.
-    * @param _component Address of the indicator/comparator associated with the ComponentInstances NFT.
+    * @param _componentID ID of the indicator/comparator associated with the ComponentInstances NFT.
     * @return address Address of the deployed ComponentInstances contract.
     */
-    function createInstance(address _component) external override onlyComponentRegistry returns (address) {
-        address componentInstanceContract = address(new ComponentInstances(componentRegistry, feeToken, _component));
+    function createInstance(uint256 _componentID) external override onlyComponentRegistry returns (address) {
+        address componentInstanceContract = address(new ComponentInstances(componentRegistry, feeToken, _componentID));
 
-        emit CreatedInstanceContract(_component, componentInstanceContract);
+        emit CreatedInstanceContract(_componentID, componentInstanceContract);
 
         return componentInstanceContract;
     }
@@ -46,5 +46,5 @@ contract ComponentInstancesFactory is IComponentInstancesFactory {
 
     /* ========== EVENTS ========== */
 
-    event CreatedInstanceContract(address component, address componentInstanceContract);
+    event CreatedInstanceContract(uint256 componentID, address componentInstanceContract);
 }
