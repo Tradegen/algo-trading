@@ -228,7 +228,7 @@ contract KeeperRegistry is IKeeperRegistry, Ownable, ReentrancyGuard {
         // Check if msg.sender owns the instance ID.
         // Check that there's no existing keeper for the target/instance.
         if (_jobType == 0 || _jobType == 1) {
-            require(componentsRegistry.checkInfoForUpkeep(msg.sender, _target, _instanceID), "KeeperRegistry: Invalid info for upkeep.");
+            require(componentsRegistry.checkInfoForUpkeep(msg.sender, _jobType == 0, _target, _instanceID), "KeeperRegistry: Invalid info for upkeep.");
 
             if (_jobType == 0) {
                 IIndicator(_target).setKeeper(_instanceID, _keeper);

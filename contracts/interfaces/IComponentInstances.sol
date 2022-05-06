@@ -22,9 +22,9 @@ interface IComponentInstances {
      * @notice Given the ID of an instance, returns the component instance's info.
      * @param _instanceID ID of the component instance.
      * @return (address, uint256, bool, uint256) Address of the instance owner,
-     *                                                 token ID of the instance,
-     *                                                 whether the component instance is default,
-     *                                                 and price of the component instance.
+     *                                           token ID of the instance,
+     *                                           whether the component instance is default,
+     *                                           and price of the component instance.
      */
     function getComponentInstanceInfo(uint256 _instanceID) external view returns (address, uint256, bool, uint256);
 

@@ -9,13 +9,14 @@ interface IComponentsRegistry {
     /**
      * @notice Given the ID of a component, returns the component's info.
      * @param _componentID ID of the component.
-     * @return (address, address, uint256, uint256, string) Address of the component owner,
-     *                                                      address of the component's contract.
-     *                                                      token ID of the component,
-     *                                                      component's instance creation fee,
-     *                                                      and the name of the component.
+     * @return (address, address, bool, uint256, uint256, string) Address of the component owner,
+     *                                                            address of the component's contract,
+     *                                                            whether the component is an indicator,
+     *                                                            token ID of the component,
+     *                                                            component's instance creation fee,
+     *                                                            and the name of the component.
      */
-    function getComponentInfo(uint256 _componentID) external view returns (address, address, uint256, uint256, string memory);
+    function getComponentInfo(uint256 _componentID) external view returns (address, bool, address, uint256, uint256, string memory);
 
     /**
      * @notice Given the ID of an instance, returns the component instance's info.
@@ -41,11 +42,12 @@ interface IComponentsRegistry {
     * @dev This function is meant to be called by the KeeperRegistry contract.
     * @dev Checks if _owner owns the given instance, target is a valid indicator/comparator, and there's no existing keeper for the given instance.
     * @param _owner Address of the owner to check.
+    * @param _isIndicator Whether the component is an indicator.
     * @param _target Address of the indicator/comparator.
     * @param _instanceID The instance ID of the indicator/comparator.
     * @return bool Whether the upkeep can be created.
     */
-    function checkInfoForUpkeep(address _owner, address _target, uint256 _instanceID) external view returns (bool);
+    function checkInfoForUpkeep(address _owner, bool _isIndicator, address _target, uint256 _instanceID) external view returns (bool);
 
     /**
     * @notice Returns the state of the given indicator instance.
@@ -125,7 +127,7 @@ interface IComponentsRegistry {
      * @param _componentID ID of the component.
      * @param _instanceID ID of the component instance.
      */
-    function markComponentAsDefault(uint256 _componentID, uint256 _instanceID) external;
+    function markComponentInstanceAsDefault(uint256 _componentID, uint256 _instanceID) external;
 
     /**
      * @notice Updates the fee of the given component.

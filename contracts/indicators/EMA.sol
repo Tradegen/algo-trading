@@ -44,7 +44,7 @@ contract EMA is IIndicator {
     mapping (uint256 => uint256) public override indicatorTimeframe;
 
     // (instance number => address of the instance's dedicated keeper).
-    mapping (uint256 => address) public keepers;
+    mapping (uint256 => address) public override keepers;
 
     constructor(address _componentRegistry, address _candlestickDataFeedRegistry, address _keeperRegistry) {
         require(_componentRegistry != address(0), "Indicator: Invalid address for _componentRegistry.");
@@ -187,7 +187,7 @@ contract EMA is IIndicator {
             history: new uint256[](0)
         });
 
-        emit CreatedInstance(numberOfInstances, _asset, _assetTimeframe, _indicatorTimeframe, _params);
+        emit CreatedInstance(instanceNumber, _asset, _assetTimeframe, _indicatorTimeframe, _params);
 
         return instanceNumber;
     }

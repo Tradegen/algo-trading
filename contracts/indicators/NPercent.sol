@@ -41,7 +41,7 @@ contract NPercent is IIndicator {
     mapping (uint256 => uint256) public override indicatorTimeframe;
 
     // (instance number => address of the instance's dedicated keeper).
-    mapping (uint256 => address) public keepers;
+    mapping (uint256 => address) public override keepers;
 
     constructor(address _componentRegistry, address _candlestickDataFeedRegistry, address _keeperRegistry) {
         require(_componentRegistry != address(0), "Indicator: Invalid address for _componentRegistry.");

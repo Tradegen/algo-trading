@@ -16,6 +16,11 @@ interface IIndicator {
     /* ========== VIEWS ========== */
 
     /**
+    * @notice Returns the address of the keeper for the given instance.
+    */
+    function keepers(uint256 _instance) external view returns (address);
+
+    /**
     * @notice Returns the name of this indicator.
     */
     function getName() external pure returns (string memory);

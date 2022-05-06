@@ -66,7 +66,7 @@ contract ComponentInstances is IComponentInstances, ERC1155, ReentrancyGuard {
      * @param _instanceID ID of the component instance.
      * @return (bool) Whether the user has purchased this component instance.
      */
-    function hasPurchasedInstance(address _user, uint256 _instanceID) external view override returns (bool) {
+    function hasPurchasedInstance(address _user, uint256 _instanceID) public view override returns (bool) {
         return purchasedInstance[_user][_instanceID] || instances[_instanceID].isDefault;
     }
 
@@ -118,6 +118,8 @@ contract ComponentInstances is IComponentInstances, ERC1155, ReentrancyGuard {
      * @param _instanceID ID of the component instance.
      */
     function purchaseComponentInstance(address _user, uint256 _instanceID) external override onlyComponentRegistry nonReentrant {
+        require(!hasPurchasedInstance(_user, _instanceID), "ComponentInstances: Already purchased this component instance.");
+        
         // Gas savings.
         ComponentInstance memory instance = instances[_instanceID];
 
