@@ -13,6 +13,12 @@ interface IComponentInstances {
     /* ========== VIEWS ========== */
 
     /**
+     * @notice Returns the address of the component associated with this contract.
+     * @return (address) Address of the component contract.
+     */
+    function component() external view returns (address);
+
+    /**
      * @notice Given the ID of an instance, returns the component instance's info.
      * @param _instanceID ID of the component instance.
      * @return (address, uint256, bool, uint256) Address of the instance owner,

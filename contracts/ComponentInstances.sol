@@ -9,8 +9,7 @@ import "./openzeppelin-solidity/contracts/ERC1155/ERC1155.sol";
 import "./openzeppelin-solidity/contracts/ERC20/SafeERC20.sol";
 
 // Interfaces.
-import './interfaces/IIndicator.sol';
-import './interfaces/IComparator.sol';
+import './interfaces/IComponent.sol';
 
 // Inheritance.
 import './interfaces/IComponentInstances.sol';
@@ -21,6 +20,7 @@ contract ComponentInstances is IComponentInstances, ERC1155, ReentrancyGuard {
 
     address public immutable componentRegistry;
     IERC20 public immutable feeToken;
+    address public immutable override component;
 
     // Total number of instances that have been created.
     // When an instance is created, the instance's ID is [numberOfInstances] at the time.
@@ -33,12 +33,14 @@ contract ComponentInstances is IComponentInstances, ERC1155, ReentrancyGuard {
     // (user address => instance ID => whether the user has purchased the instance).
     mapping(address => mapping(uint256 => bool)) public purchasedInstance; 
 
-    constructor(address _componentRegistry, address _feeToken) {
+    constructor(address _componentRegistry, address _feeToken, address _component) {
         require(_componentRegistry != address(0), "ComponentInstances: Invalid address for _componentRegistry.");
         require(_feeToken != address(0), "ComponentInstances: Invalid address for _feeToken.");
+        require(_component != address(0), "ComponentInstances: Invalid address for _component.");
 
         componentRegistry = _componentRegistry;
         feeToken = IERC20(_feeToken);
+        component = _component;
     }
 
     /* ========== VIEWS ========== */
@@ -93,7 +95,15 @@ contract ComponentInstances is IComponentInstances, ERC1155, ReentrancyGuard {
         // Create the NFT and transfer it to _owner.
         _mint(_owner, tokenID, 1, "");
 
-        emit MintedInstance(tokenID, _owner, _price, _isDefault);
+        // Gas savings.
+        uint256 fee = IComponent(component).instanceCreationFee();
+        address componentOwner = IComponent(component).componentOwner();
+
+        // Transfer the creation fee to the component owner.
+        feeToken.safeTransferFrom(msg.sender, address(this), fee);
+        feeToken.safeTransfer(componentOwner, fee);
+
+        emit CreatedInstance(tokenID, _owner, fee, componentOwner, _price, _isDefault);
     }
 
     /**
@@ -179,8 +189,9 @@ contract ComponentInstances is IComponentInstances, ERC1155, ReentrancyGuard {
 
     /* ========== EVENTS ========== */
 
-    event MintedInstance(uint256 tokenID, address owner, uint256 price, bool isDefault);
+    event CreatedInstance(uint256 tokenID, address owner, uint256 creationFee, address feeRecipient, uint256 price, bool isDefault);
     event PurchasedInstance(address user, uint256 instanceID, uint256 price);
     event MarkedInstanceAsDefault(uint256 instanceID);
     event UpdatedInstancePrice(uint256 instanceID, uint256 newPrice);
+    event UpdatedComponentOwner(address newOwner);
 }
