@@ -5,6 +5,7 @@ pragma solidity ^0.8.3;
 // Openzeppelin.
 import "./openzeppelin-solidity/contracts/SafeMath.sol";
 import "./openzeppelin-solidity/contracts/Ownable.sol";
+import "./openzeppelin-solidity/contracts/ReentrancyGuard.sol";
 import "./openzeppelin-solidity/contracts/ERC20/SafeERC20.sol";
 
 // Internal references.
@@ -16,31 +17,51 @@ import './Keeper.sol';
 // Inheritance.
 import './interfaces/IKeeperRegistry.sol';
 
-contract KeeperRegsitry is IKeeperRegistry, Ownable {
+contract KeeperRegistry is IKeeperRegistry, Ownable, ReentrancyGuard {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    uint256 public constant MAX_JOBS_PER_KEEPER = 10;
-    uint256 public constant MAX_KEEPER_FEE = 1e21;
-    uint256 public constant MAX_FEE_INCREASE = 1e19;
-    uint256 public constant MIN_TIME_BETWEEN_FEE_CHANGES = 1 days;
+    uint256 constant MAX_JOBS_PER_KEEPER = 10;
+    uint256 constant MAX_KEEPER_FEE = 1e21;
+    uint256 constant MAX_FEE_INCREASE = 1e19;
+    uint256 constant MIN_TIME_BETWEEN_FEE_CHANGES = 1 days;
 
-    IERC20 public immutable feeToken;
-    IComponentsRegistry public immutable componentsRegistry;
-    ITradingBotRegistry public immutable tradingBotRegistry;
+    IERC20 immutable feeToken;
+    IComponentsRegistry immutable componentsRegistry;
+    ITradingBotRegistry immutable tradingBotRegistry;
 
+    // (job ID => job info).
     mapping (uint256 => Upkeep) public upkeeps;
+
+    // (keeper contract address => keeper info).
     mapping (address => KeeperInfo) public keepers;
+
+    // (job ID => available funds).
+    // Funds are deducted from a job whenever a keeper performs upkeep on the job.
     mapping (uint256 => uint256) public override availableFunds;
+
+    // (payee => uncollected fees).
+    // Fees are added to a payee whenever the keeper associated with the payee performs upkeep on a job.
     mapping (address => uint256) public override availableFees;
+
+    // (user address => address of deployed keeper contract).
+    // Limit of 1 deployed keeper contract per user.
     mapping (address => address) public userToKeeper;
+
+    // (keeper contract address => array of job IDs the keeper is responsible for).
     mapping (address => uint256[]) public keeperJobs;
+
+    // (keeper contract address => timestamp).
     mapping (address => uint256) public lastFeeChange;
+
+    // Total number of jobs that have been created.
+    // When a job is created, the job's ID is [numberOfJobs] at the time.
+    // This ensures job IDs are strictly increasing.
     uint256 public numberOfJobs;
 
-    constructor(address _feeToken, address _componentsRegsitry, address _tradingBotRegistry) Ownable() {
+    constructor(address _feeToken, address _componentsRegistry, address _tradingBotRegistry) Ownable() {
         feeToken = IERC20(_feeToken);
-        componentsRegistry = IComponentsRegistry(_componentsRegsitry);
+        componentsRegistry = IComponentsRegistry(_componentsRegistry);
         tradingBotRegistry = ITradingBotRegistry(_tradingBotRegistry);
     }
 
@@ -115,7 +136,7 @@ contract KeeperRegsitry is IKeeperRegistry, Ownable {
     * @param _jobID The ID of the job.
     * @param _amount Number of tokens to transfer.
     */
-    function addFunds(uint256 _jobID, uint256 _amount) external override onlyJobOwner(_jobID) {
+    function addFunds(uint256 _jobID, uint256 _amount) external override onlyJobOwner(_jobID) nonReentrant {
         availableFunds[_jobID] = availableFunds[_jobID].add(_amount);
         feeToken.safeTransferFrom(msg.sender, address(this), _amount);
 
@@ -128,7 +149,7 @@ contract KeeperRegsitry is IKeeperRegistry, Ownable {
     * @param _jobID The ID of the job.
     * @param _amount Number of tokens to withdraw.
     */
-    function withdrawFunds(uint256 _jobID, uint256 _amount) external override onlyJobOwner(_jobID) {
+    function withdrawFunds(uint256 _jobID, uint256 _amount) external override onlyJobOwner(_jobID) nonReentrant {
         _withdrawFunds(msg.sender, _jobID, _amount);
     }
 
@@ -146,6 +167,7 @@ contract KeeperRegsitry is IKeeperRegistry, Ownable {
         require(_payee != address(0), "KeeperRegistry: Invalid address for _payee.");
         require(_fee <= MAX_KEEPER_FEE, "KeeperRegistry: Keeper fee is too high.");
 
+        // Create a Keeper contract.
         address keeperAddress = address(new Keeper(msg.sender, _caller));
 
         userToKeeper[msg.sender] = keeperAddress;
@@ -176,7 +198,7 @@ contract KeeperRegsitry is IKeeperRegistry, Ownable {
     * @dev Only the keeper contract's payee can call this function.
     * @param _keeper Address of the keeper contract.
     */
-    function claimFees(address _keeper) external override onlyPayee(_keeper) {
+    function claimFees(address _keeper) external override onlyPayee(_keeper) nonReentrant {
         address payee = keepers[_keeper].payee;
         uint256 amount = availableFees[_keeper];
 
@@ -202,7 +224,7 @@ contract KeeperRegsitry is IKeeperRegistry, Ownable {
         // Check if target is valid indicator/comparator/bot.
         // Check if msg.sender owns the instance ID.
         // Check that there's no existing keeper for the target/instance.
-        if (_jobType == 0) {
+        if (_jobType == 0 || _jobType == 1) {
             require(componentsRegistry.checkInfoForUpkeep(msg.sender, _target, _instanceID), "KeeperRegistry: Invalid info for upkeep.");
         }
         else {
@@ -235,6 +257,7 @@ contract KeeperRegsitry is IKeeperRegistry, Ownable {
         upkeeps[_jobID].isActive = false;
         upkeeps[_jobID].owner = address(0);
 
+        // Find the index of the job ID in the keeper's array of jobs.
         uint256 index;
         address keeper = upkeeps[_jobID].keeper;
         uint256 length = keeperJobs[keeper].length;
@@ -246,6 +269,7 @@ contract KeeperRegsitry is IKeeperRegistry, Ownable {
 
         require(index < length, "KeeperRegistry: Job not found.");
 
+        // Move the job ID at the last index to the index of the job being cancelled.
         keeperJobs[keeper][index] = keeperJobs[keeper][length.sub(1)];
         delete keeperJobs[keeper][length.sub(1)];
 
@@ -264,6 +288,7 @@ contract KeeperRegsitry is IKeeperRegistry, Ownable {
         require(_newFee <= MAX_KEEPER_FEE, "KeeperRegistry: New fee is too high.");
         require(block.timestamp.sub(lastFeeChange[_keeper]) >= MIN_TIME_BETWEEN_FEE_CHANGES, "KeeperRegistry: Not enough time between fee changes.");
 
+        // Enforce MAX_FEE_INCREASE if the new fee is higher than the current fee.
         if (_newFee > keepers[_keeper].fee) {
             require(_newFee.sub(keepers[_keeper].fee) <= MAX_FEE_INCREASE, "KeeperRegistry: Fee increase is too high.");
         }
@@ -280,7 +305,7 @@ contract KeeperRegsitry is IKeeperRegistry, Ownable {
     * @dev Transaction will revert if the keeper is not responsible for the given job.
     * @param _jobID The job ID.
     */
-    function chargeFee(uint256 _jobID) external override onlyKeeper(_jobID) {
+    function chargeFee(uint256 _jobID) external override onlyKeeper(_jobID) nonReentrant {
         address keeper = upkeeps[_jobID].keeper;
         address payee = keepers[keeper].payee;
         uint256 fee = keepers[keeper].fee;
@@ -293,6 +318,12 @@ contract KeeperRegsitry is IKeeperRegistry, Ownable {
 
     /* ========== INTERNAL FUNCTIONS ========== */
 
+     /**
+    * @notice Deducts [_amount] from the job's available funds and transfers [_amount] of fee tokens to [_to].
+    * @param _to Address of the user/contract receiving the funds.
+    * @param _jobID The job ID.
+    * @param _amount Amount of funds to transfer.
+    */
     function _withdrawFunds(address _to, uint256 _jobID, uint256 _amount) internal {
         availableFunds[_jobID] = availableFunds[_jobID].sub(_amount);
         feeToken.safeTransfer(_to, _amount);

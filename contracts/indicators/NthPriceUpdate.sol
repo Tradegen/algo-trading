@@ -1,35 +1,69 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.3;
 
-// Openzeppelin
+// Openzeppelin.
 import "../openzeppelin-solidity/contracts/SafeMath.sol";
 
-// Inheritance
+// Internal references.
+import '../interfaces/external/ICandlestickDataFeedRegistry.sol';
+
+// Inheritance.
 import '../interfaces/IIndicator.sol';
 
 contract NthPriceUpdate is IIndicator {
     using SafeMath for uint256;
 
-    address public immutable componentsAddress;
+    // Maximum number of elements to use for the history.
+    // This prevents 'for' loops with too many iterations, which may exceed the block gas limit.
+    uint256 public constant MAX_HISTORY_LENGTH = 20;
 
-    constructor(address _componentsAddress) {
-        require(_componentsAddress != address(0), "Indicator: invalid address for Components contract.");
+    // Maximum number of seconds between indicator updates before the indicator is considered inactive.
+    uint256 public constant MAX_TIME_BETWEEN_UPDATES = 180;
 
-        componentsAddress = _componentsAddress;
-    }
+    address public immutable componentRegistry;
+    address public immutable keeperRegistry;
+    ICandlestickDataFeedRegistry public immutable candlestickDataFeedRegistry;
 
+    // Keep track of total number of instances.
+    // This ensures instance IDs are unique.
     uint256 numberOfInstances;
+
+    // (instance number => instance state).
     mapping (uint256 => State) public instances;
 
+    // (instance number => timestamp at which the instance was last updated).
+    // Prevents keepers from updating instances too frequently.
+    mapping (uint256 => uint256) public lastUpdated;
+
+    // (instance number => timeframe, in minutes).
+    // The indicator instance's timeframe can be different from the asset's timeframe.
+    mapping (uint256 => uint256) public override indicatorTimeframe;
+
+    // (instance number => address of the instance's dedicated keeper).
+    mapping (uint256 => address) public keepers;
+
+    constructor(address _componentRegistry, address _candlestickDataFeedRegistry, address _keeperRegistry) {
+        require(_componentRegistry != address(0), "Indicator: Invalid address for _componentRegistry.");
+        require(_candlestickDataFeedRegistry != address(0), "Indicator: Invalid address for _candlestickDataFeedRegistry.");
+        require(_keeperRegistry != address(0), "Indicator: Invalid address for _keeperRegistry.");
+
+        componentRegistry = _componentRegistry;
+        keeperRegistry = _keeperRegistry;
+        candlestickDataFeedRegistry = ICandlestickDataFeedRegistry(_candlestickDataFeedRegistry);
+    }
+
+    /* ========== VIEWS ========== */
+
     /**
-    * @dev Returns the name of this indicator.
+    * @notice Returns the name of this indicator.
     */
     function getName() external pure override returns (string memory) {
         return "NthPriceUpdate";
     }
 
     /**
-    * @dev Returns the value of this indicator for the given instance.
+    * @notice Returns the value of this indicator for the given instance.
+    * @dev Returns an empty array if the instance number is out of bounds.
     * @param _instance Instance number of this indicator.
     * @return (uint256[] memory) Indicator value for the given instance.
     */
@@ -42,67 +76,170 @@ contract NthPriceUpdate is IIndicator {
     }
 
     /**
-    * @dev Returns the history of this indicator for the given instance.
+    * @notice Returns the history of this indicator for the given instance.
+    * @dev Returns an empty array if the instance number is out of bounds.
     * @param _instance Instance number of this indicator.
     * @return (uint256[] memory) Indicator value history for the given instance.
     */
     function getHistory(uint256 _instance) external view override returns (uint256[] memory) {
-        uint256[] memory result = instances[_instance].history;
+        // Gas savings.
+        State memory state = instances[_instance];
+        uint256[] memory history = new uint256[](state.history.length >= MAX_HISTORY_LENGTH ? MAX_HISTORY_LENGTH : state.history.length);
 
-        return result;
+        for (uint256 i = 0; i < history.length; i++) {
+            history[i] = instances[_instance].history[i];
+        }
+
+
+        return history;
     }
 
     /**
-    * @dev Creates an instance of this indicator for the contract calling this function.
-    * @notice This function is meant to be called by the TradingBot contract.
-    * @param _params A serialized array of params to use for this indicator.
-    *                The serialized array has 96 bits, consisting of 6 params with 16 bits each.
-    *                Expects left-most 160 bits to be 0.
+    * @notice Returns whether the indicator instance can be updated.
+    * @param _instance Instance number of this indicator.
+    * @return bool Whether the indicator instance can be updated.
+    */
+    function canUpdate(uint256 _instance) external view override returns (bool) {
+        return block.timestamp >= lastUpdated[_instance].add(indicatorTimeframe[_instance].mul(60)).sub(2);
+    }
+
+    /**
+    * @notice Returns the status of the given instance of this indicator.
+    * @param _instance Instance number of this indicator.
+    * @return bool Whether the indicator instance is active.
+    */
+    function isActive(uint256 _instance) external view override returns (bool) {
+        if (block.timestamp > lastUpdated[_instance].add(indicatorTimeframe[_instance].mul(60)).add(MAX_TIME_BETWEEN_UPDATES)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+    * @notice Returns the state of the given indicator instance.
+    * @dev Returns 0 for each value if the instance is out of bounds.
+    * @param _instance Instance number of this indicator.
+    * @return (string, address, uint256, uint256, uint256[])  Asset symbol,
+    *                                                         timeframe of the asset (in minutes),
+    *                                                         the current value of the given instance,
+    *                                                         an array of params for the given instance,
+    *                                                         an array of variables for the given instance,
+    *                                                         the history of the given instance.
+    */
+    function getState(uint256 _instance) external view override returns (string memory, uint256, uint256, uint256[] memory, uint256[] memory, uint256[] memory) {
+        // Gas savings.
+        State memory state = instances[_instance];
+        uint256[] memory params = new uint256[](state.params.length);
+        uint256[] memory variables = new uint256[](state.variables.length);
+        uint256[] memory history = new uint256[](state.history.length >= MAX_HISTORY_LENGTH ? MAX_HISTORY_LENGTH : state.history.length);
+
+        for (uint256 i = 0; i < params.length; i++) {
+            params[i] = instances[_instance].params[i];
+        }
+
+        for (uint256 i = 0; i < variables.length; i++) {
+            variables[i] = instances[_instance].variables[i];
+        }
+
+        for (uint256 i = 0; i < history.length; i++) {
+            history[i] = instances[_instance].history[i];
+        }
+
+        return (state.asset, state.assetTimeframe, state.value, params, variables, history);
+    }
+
+    /* ========== MUTATIVE FUNCTIONS ========== */
+
+    /**
+    * @notice Creates an instance of this indicator.
+    * @dev This function can only be called by the ComponentRegistry contract.
+    * @param _asset Symbol of the asset.
+    * @param _assetTimeframe Timeframe (in minutes) of the asset's data feed.
+    * @param _indicatorTimeframe Timeframe (in minutes) of the indicator instance.
+    * @param _params An array of parameters.
     * @return (uint256) Instance number of the indicator.
     */
-    function addTradingBot(uint256 _params) external override returns (uint256) {
-        require((_params >> 80) > 1 && (_params >> 80) <= 200, "Indicator: param out of bounds.");
+    function createInstance(string memory _asset,
+                            uint256 _assetTimeframe,
+                            uint256 _indicatorTimeframe,
+                            uint256[] memory _params) external override onlyComponentRegistry returns (uint256) {
+        require(_params.length >= 1, "Indicator: Not enough params.");
+        require(_params[0] > 1 && _params[1] <= 200, "Indicator: Param out of bounds.");
 
-        numberOfInstances = numberOfInstances.add(1);
-        instances[numberOfInstances] = State({
-            tradingBot: msg.sender,
+        // Gas savings.
+        uint256 instanceNumber = numberOfInstances.add(1);
+
+        indicatorTimeframe[instanceNumber] = _indicatorTimeframe;
+        numberOfInstances = instanceNumber;
+        instances[instanceNumber] = State({
+            asset: _asset,
+            assetTimeframe: _assetTimeframe,
             value: 0,
             params: _params,
             variables: new uint256[](0),
             history: new uint256[](0)
         });
 
-        emit AddedTradingBot(msg.sender, numberOfInstances, _params);
+        emit CreatedInstance(numberOfInstances, _asset, _assetTimeframe, _indicatorTimeframe, _params);
 
-        return numberOfInstances;
+        return instanceNumber;
     }
 
     /**
-    * @dev Updates the indicator's state for the given instance, based on the latest price feed update.
-    * @notice This function is meant to be called by the TradingBot contract.
+    * @notice Updates the indicator's state for the given instance, based on the latest price feed update.
+    * @dev This function can only be called by the dedicated keeper of this instance.
     * @param _instance Instance number of this indicator.
-    * @param _latestPrice The latest price from oracle price feed.
+    * @return bool Whether the indicator was updated successfully.
     */
-    function update(uint256 _instance, CandlestickUtils.Candlestick memory _latestPrice) external override onlyTradingBot(_instance) {
+    function update(uint256 _instance) external override onlyDedicatedKeeper(_instance) returns (bool) {
         State memory data = instances[_instance];
+        uint256 latestPrice = candlestickDataFeedRegistry.getCurrentPrice(data.asset, data.assetTimeframe);
 
-        instances[_instance].history.push(_latestPrice.close);
-        instances[_instance].value = (data.history.length >= (data.params >> 80)) ? data.history[data.history.length.sub(data.params >> 80)] : 0;
+        // Return early if there was an error getting the latest price.
+        if (latestPrice == 0) {
+            return false;
+        }
+
+        uint256 value = (data.history.length >= data.params[0]) ? data.history[data.history.length.sub(data.params[0])] : 0;
+
+        instances[_instance].history.push(latestPrice);
+        instances[_instance].value = value;
         
-        emit Updated(_instance, _latestPrice, (data.history.length >= (data.params >> 80)) ? data.history[data.history.length.sub(data.params >> 80)] : 0);
+        emit Updated(_instance, latestPrice, value);
+
+        return true;
+    }
+
+    /**
+    * @notice Updates the dedicated keeper for the given instance of this indicator.
+    * @dev This function can only be called by the KeeperRegistry contract.
+    * @param _instance Instance number of this indicator.
+    * @param _newKeeper Address of the new keeper contract.
+    */
+    function setKeeper(uint256 _instance, address _newKeeper) external override onlyKeeperRegistry {
+        keepers[_instance] = _newKeeper;
+
+        emit UpdatedKeeper(_instance, _newKeeper);
     }
 
     /* ========== MODIFIERS ========== */
 
-    modifier onlyTradingBot(uint256 _instance) {
-        require(instances[_instance].tradingBot == msg.sender,
-                "Indicator: Wrong trading bot for this instance.");
+    modifier onlyDedicatedKeeper(uint256 _instance) {
+        require(keepers[_instance] == msg.sender,
+                "Indicator: Only the dedicated keeper for this instance can call the function.");
         _;
     }
 
-    modifier onlyComponentsContract() {
-        require(msg.sender == componentsAddress,
-                "Indicator: Only the Components contract can call this function.");
+    modifier onlyComponentRegistry() {
+        require(msg.sender == componentRegistry,
+                "Indicator: Only the ComponentRegistry contract can call this function.");
+        _;
+    }
+
+    modifier onlyKeeperRegistry() {
+        require(msg.sender == keeperRegistry,
+                "Indicator: Only the KeeperRegistry contract can call this function.");
         _;
     }
 }
