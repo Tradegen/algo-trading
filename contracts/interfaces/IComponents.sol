@@ -5,6 +5,7 @@ pragma solidity ^0.8.3;
 interface IComponents {
     struct Component {
         address owner;
+        bool isIndicator;
         address contractAddress;
         uint256 tokenID;
         uint256 instanceCreationFee;
@@ -22,12 +23,13 @@ interface IComponents {
     /**
      * @notice Given the ID of a component, returns the component's info.
      * @param _componentID ID of the component.
-     * @return (address, address, uint256, uint256) Address of the component owner,
-     *                                              address of the component's contract.
-     *                                              token ID of the component,
-     *                                              and component's instance creation fee.
+     * @return (address, bool, address, uint256, uint256) Address of the component owner,
+     *                                                    whether the component is an indicator,
+     *                                                    address of the component's contract.
+     *                                                    token ID of the component,
+     *                                                    and component's instance creation fee.
      */
-    function getComponentInfo(uint256 _componentID) external view returns (address, address, uint256, uint256);
+    function getComponentInfo(uint256 _componentID) external view returns (address, bool, address, uint256, uint256);
 
     /* ========== MUTATIVE FUNCTIONS ========== */
 
@@ -35,11 +37,12 @@ interface IComponents {
     * @notice Mints an NFT for the given component.
     * @dev This function can only be called by the ComponentRegistry contract.
     * @param _contractAddress Address of the component's contract.
+    * @param _isIndicator Whether the component is an indicator.
     * @param _owner Address of the component's owner.
     * @param _fee The fee, in TGEN, to create an instance of the component.
     * @return uint256 The token ID of the minted component.
     */
-    function createComponent(address _contractAddress, address _owner, uint256 _fee) external returns (uint256);
+    function createComponent(address _contractAddress, bool _isIndicator, address _owner, uint256 _fee) external returns (uint256);
 
     /**
     * @notice Sets the address of the given component's ComponentInstances contract.

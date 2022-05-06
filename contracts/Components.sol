@@ -45,16 +45,17 @@ contract Components is IComponents, ERC1155, ReentrancyGuard {
     /**
      * @notice Given the ID of a component, returns the component's info.
      * @param _componentID ID of the component.
-     * @return (address, address, uint256, uint256) Address of the component owner,
-     *                                              address of the component's contract.
-     *                                              token ID of the component,
-     *                                              and component's instance creation fee.
+     * @return (address, bool, address, uint256, uint256) Address of the component owner,
+     *                                                    whether the component is an indicator,
+     *                                                    address of the component's contract.
+     *                                                    token ID of the component,
+     *                                                    and component's instance creation fee.
      */
-    function getComponentInfo(uint256 _componentID) external view override returns (address, address, uint256, uint256) {
+    function getComponentInfo(uint256 _componentID) external view override returns (address, bool, address, uint256, uint256) {
         // Gas savings.
         Component memory component = components[_componentID];
 
-        return (component.owner, component.contractAddress, component.tokenID, component.instanceCreationFee);
+        return (component.owner, component.isIndicator, component.contractAddress, component.tokenID, component.instanceCreationFee);
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
@@ -63,16 +64,18 @@ contract Components is IComponents, ERC1155, ReentrancyGuard {
     * @notice Mints an NFT for the given component.
     * @dev This function can only be called by the ComponentRegistry contract.
     * @param _contractAddress Address of the component's contract.
+    * @param _isIndicator Whether the component is an indicator.
     * @param _owner Address of the component's owner.
     * @param _fee The fee, in TGEN, to create an instance of the component.
     * @return uint256 The token ID of the minted component.
     */
-    function createComponent(address _contractAddress, address _owner, uint256 _fee) external override onlyComponentRegistry returns (uint256) {
+    function createComponent(address _contractAddress, bool _isIndicator, address _owner, uint256 _fee) external override onlyComponentRegistry returns (uint256) {
         uint256 tokenID = numberOfComponents.add(1);
 
         numberOfComponents = numberOfComponents.add(1);
         components[tokenID] = Component({
             owner: _owner,
+            isIndicator: _isIndicator,
             contractAddress: _contractAddress,
             tokenID: tokenID,
             instanceCreationFee: _fee
@@ -81,7 +84,7 @@ contract Components is IComponents, ERC1155, ReentrancyGuard {
         // Create the NFT and transfer it to _owner.
         _mint(_owner, tokenID, 1, "");
 
-        emit CreatedComponent(tokenID, _owner, _fee);
+        emit CreatedComponent(tokenID, _isIndicator, _owner, _fee);
 
         return tokenID;
     }
@@ -149,7 +152,7 @@ contract Components is IComponents, ERC1155, ReentrancyGuard {
 
     /* ========== EVENTS ========== */
 
-    event CreatedComponent(uint256 tokenID, address owner, uint256 instanceCreationFee);
+    event CreatedComponent(uint256 tokenID, bool isIndicator, address owner, uint256 instanceCreationFee);
     event UpdatedComponentFee(uint256 componentID, uint256 newFee);
     event SetComponentInstance(uint256 componentID, address componentInstances);
 }
