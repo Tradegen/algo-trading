@@ -12,6 +12,9 @@ import "./openzeppelin-solidity/contracts/ERC20/SafeERC20.sol";
 import './interfaces/IKeeper.sol';
 import './interfaces/IComponentsRegistry.sol';
 import './interfaces/ITradingBotRegistry.sol';
+import './interfaces/IIndicator.sol';
+import './interfaces/IComparator.sol';
+import './interfaces/ITradingBotLogic.sol';
 import './Keeper.sol';
 
 // Inheritance.
@@ -226,9 +229,18 @@ contract KeeperRegistry is IKeeperRegistry, Ownable, ReentrancyGuard {
         // Check that there's no existing keeper for the target/instance.
         if (_jobType == 0 || _jobType == 1) {
             require(componentsRegistry.checkInfoForUpkeep(msg.sender, _target, _instanceID), "KeeperRegistry: Invalid info for upkeep.");
+
+            if (_jobType == 0) {
+                IIndicator(_target).setKeeper(_instanceID, _keeper);
+            }
+            else {
+                IComparator(_target).setKeeper(_instanceID, _keeper);
+            }
         }
         else {
             require(tradingBotRegistry.checkInfoForUpkeep(msg.sender, _target), "KeeperRegistry: Invalid info for upkeep.");
+
+            ITradingBotLogic(_target).setKeeper(_keeper);
         }
 
         uint256 jobID = numberOfJobs.add(1);
@@ -272,6 +284,19 @@ contract KeeperRegistry is IKeeperRegistry, Ownable, ReentrancyGuard {
         // Move the job ID at the last index to the index of the job being cancelled.
         keeperJobs[keeper][index] = keeperJobs[keeper][length.sub(1)];
         delete keeperJobs[keeper][length.sub(1)];
+
+        uint256 jobType = upkeeps[_jobID].jobType;
+        address target = upkeeps[_jobID].target;
+        uint256 instanceID = upkeeps[_jobID].instanceID;
+        if (jobType == 0) {
+            IIndicator(target).setKeeper(instanceID, address(0));
+        }
+        else if (jobType == 1) {
+            IComparator(target).setKeeper(instanceID, address(0));
+        }
+        else if (jobType == 2) {
+            ITradingBotLogic(target).setKeeper(address(0));
+        }
 
         _withdrawFunds(msg.sender, _jobID, availableFunds[_jobID]);
 
