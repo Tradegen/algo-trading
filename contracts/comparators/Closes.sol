@@ -20,6 +20,8 @@ contract Closes is IComparator {
     address public immutable componentRegistry;
     address public immutable keeperRegistry;
 
+    bool public override meetsConditions;
+
     // Keep track of total number of instances.
     // This ensures instance IDs are unique.
     uint256 numberOfInstances;
@@ -60,7 +62,7 @@ contract Closes is IComparator {
     * @param _instance Instance number of this comparator.
     * @return bool Whether the comparator instance can be updated.
     */
-    function canUpdate(uint256 _instance) external view override returns (bool) {
+    function canUpdate(uint256 _instance) public view override returns (bool) {
         return block.timestamp >= lastUpdated[_instance].add(comparatorTimeframe[_instance].mul(60)).sub(2);
     }
 
@@ -141,59 +143,69 @@ contract Closes is IComparator {
     * @notice Returns whether the comparator's conditions are met for the given instance, and updates the comparator's variables.
     * @dev This function can only be called by the comparator instance's dedicated keeper.
     * @dev The transaction will revert if the comparator is not ready to be updated.
+    * @dev Sets the comparator's 'meets conditions' status.
     * @param _instance Instance number of this comparator.
-    * @return (bool) Whether the comparator's conditions are met.
+    * @return (bool) Whether the comparator's conditions were updated successfully.
     */
     function checkConditions(uint256 _instance) external override onlyDedicatedKeeper(_instance) returns (bool) {
+        require(canUpdate(_instance), "Comparator: Cannot update yet.");
+
+        lastUpdated[_instance] = block.timestamp;
+
         State memory instance = instances[_instance];
         uint256[] memory priceHistory = IIndicator(instance.firstIndicatorAddress).getValue(instance.firstIndicatorInstance);
+        bool updatedSuccessfully;
 
         if (keccak256(abi.encodePacked(IIndicator(instance.secondIndicatorAddress).getName())) == keccak256(abi.encodePacked("Up"))) {
             if (priceHistory.length == 0) {
-                return false;
+                meetsConditions = false;
             }
 
             if (priceHistory.length > 1) {
                 for (uint256 i = 1; i < priceHistory.length; i++) {
                     if (priceHistory[i] <= priceHistory[i - 1]) {
-                        return false;
+                        meetsConditions = false;
                     }
                 }
 
-                return true;
+                meetsConditions = true;
             }
             else {
                 bool result = (priceHistory[0] > instance.variables[0]);
                 instances[_instance].variables[0] = priceHistory[0];
 
-                return result;
+                meetsConditions = result;
             }
+
+            updatedSuccessfully = true;
         }
         else if (keccak256(abi.encodePacked(IIndicator(instance.secondIndicatorAddress).getName())) == keccak256(abi.encodePacked("Down"))) {
             if (priceHistory.length == 0) {
-                return false;
+                meetsConditions = false;
             }
 
             if (priceHistory.length > 1) {
                 for (uint256 i = 1; i < priceHistory.length; i++) {
                     if (priceHistory[i] >= priceHistory[i - 1]) {
-                        return false;
+                        meetsConditions = false;
                     }
                 }
 
-                return true;
+                meetsConditions = true;
             }
             else {
                 bool result = (priceHistory[0] < instance.variables[0]);
                 instances[_instance].variables[0] = priceHistory[0];
 
-                return result;
+                meetsConditions = result;
             }
+
+            updatedSuccessfully = true;
         }
 
         emit CheckedConditions(_instance);
 
-        return false;
+        return updatedSuccessfully;
     }
 
     /**

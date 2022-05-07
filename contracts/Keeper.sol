@@ -36,18 +36,18 @@ contract Keeper is IKeeper {
     * @return bool Whether the job can be performed.
     */
     function checkUpkeep(uint256 _jobID) external view override returns (bool) {
-        (bool isActive, uint8 jobType,, address jobKeeper, address target,) = keeperRegistry.getUpkeepInfo(_jobID);
+        (bool isActive, uint8 jobType,, address jobKeeper, address target, uint256 instanceID) = keeperRegistry.getUpkeepInfo(_jobID);
 
         if (!isActive || jobKeeper != address(this)) {
             return false;
         }
 
         if (jobType == 0) {
-            return IIndicator(target).canUpdate();
+            return IIndicator(target).canUpdate(instanceID);
         }
 
         if (jobType == 1) {
-            return IComparator(target).canUpdate();
+            return IComparator(target).canUpdate(instanceID);
         }
 
         if (jobType == 2) {

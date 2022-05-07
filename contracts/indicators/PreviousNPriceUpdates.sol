@@ -104,7 +104,7 @@ contract PreviousNPriceUpdates is IIndicator {
     * @param _instance Instance number of this indicator.
     * @return bool Whether the indicator instance can be updated.
     */
-    function canUpdate(uint256 _instance) external view override returns (bool) {
+    function canUpdate(uint256 _instance) public view override returns (bool) {
         return block.timestamp >= lastUpdated[_instance].add(indicatorTimeframe[_instance].mul(60)).sub(2);
     }
 
@@ -198,6 +198,8 @@ contract PreviousNPriceUpdates is IIndicator {
     * @return bool Whether the indicator was updated successfully.
     */
     function update(uint256 _instance) external override onlyDedicatedKeeper(_instance) returns (bool) {
+        require(canUpdate(_instance), "Indicator: Cannot update yet.");
+
         State memory data = instances[_instance];
         uint256 latestPrice = candlestickDataFeedRegistry.getCurrentPrice(data.asset, data.assetTimeframe);
 
@@ -207,6 +209,7 @@ contract PreviousNPriceUpdates is IIndicator {
         }
 
         instances[_instance].history.push(latestPrice);
+        lastUpdated[_instance] = block.timestamp;
         
         emit Updated(_instance, latestPrice, 0);
 

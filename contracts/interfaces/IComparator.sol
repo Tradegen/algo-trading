@@ -20,6 +20,11 @@ interface IComparator {
     function getName() external pure returns (string memory);
 
     /**
+    * @notice Returns whether the latest comparator update meets conditions.
+    */
+    function meetsConditions() external view returns (bool);
+
+    /**
     * @notice Returns whether the comparator instance can be updated.
     * @param _instance Instance number of this comparator.
     * @return bool Whether the comparator instance can be updated.
@@ -62,8 +67,9 @@ interface IComparator {
     * @notice Returns whether the comparator's conditions are met for the given instance, and updates the comparator's variables.
     * @dev This function can only be called by the comparator instance's dedicated keeper.
     * @dev The transaction will revert if the comparator is not ready to be updated.
+    * @dev Sets the comparator's 'meets conditions' status.
     * @param _instance Instance number of this comparator.
-    * @return (bool) Whether the comparator's conditions are met.
+    * @return (bool) Whether the comparator's conditions were updated successfully.
     */
     function checkConditions(uint256 _instance) external returns (bool);
 

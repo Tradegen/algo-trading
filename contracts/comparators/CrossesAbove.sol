@@ -20,6 +20,8 @@ contract CrossesAbove is IComparator {
     address public immutable componentRegistry;
     address public immutable keeperRegistry;
 
+    bool public override meetsConditions;
+
     // Keep track of total number of instances.
     // This ensures instance IDs are unique.
     uint256 numberOfInstances;
@@ -60,7 +62,7 @@ contract CrossesAbove is IComparator {
     * @param _instance Instance number of this comparator.
     * @return bool Whether the comparator instance can be updated.
     */
-    function canUpdate(uint256 _instance) external view override returns (bool) {
+    function canUpdate(uint256 _instance) public view override returns (bool) {
         return block.timestamp >= lastUpdated[_instance].add(comparatorTimeframe[_instance].mul(60)).sub(2);
     }
 
@@ -141,16 +143,23 @@ contract CrossesAbove is IComparator {
     * @notice Returns whether the comparator's conditions are met for the given instance, and updates the comparator's variables.
     * @dev This function can only be called by the comparator instance's dedicated keeper.
     * @dev The transaction will revert if the comparator is not ready to be updated.
+    * @dev Sets the comparator's 'meets conditions' status.
     * @param _instance Instance number of this comparator.
-    * @return (bool) Whether the comparator's conditions are met.
+    * @return (bool) Whether the comparator's conditions were updated successfully.
     */
     function checkConditions(uint256 _instance) external override onlyDedicatedKeeper(_instance) returns (bool) {
+        require(canUpdate(_instance), "Comparator: Cannot update yet.");
+
+        lastUpdated[_instance] = block.timestamp;
+
         State memory instance = instances[_instance];
         uint256[] memory firstIndicatorValue = IIndicator(instance.firstIndicatorAddress).getValue(instance.firstIndicatorInstance);
         uint256[] memory secondIndicatorValue = IIndicator(instance.secondIndicatorAddress).getValue(instance.secondIndicatorInstance);
 
         if (firstIndicatorValue.length == 0 || secondIndicatorValue.length == 0 || instance.variables[0] == 0 || instance.variables[1] == 0) {
-            return false;
+            meetsConditions = false;
+            emit CheckedConditions(_instance);
+            return true;
         }
 
         bool result = (instance.variables[0] < instance.variables[1]) &&
@@ -158,8 +167,11 @@ contract CrossesAbove is IComparator {
 
         instances[_instance].variables[0] = firstIndicatorValue[firstIndicatorValue.length - 1];
         instances[_instance].variables[1] = secondIndicatorValue[secondIndicatorValue.length - 1];
+        meetsConditions = result;
 
-        return result;
+        emit CheckedConditions(_instance);
+
+        return true;
     }
 
     /**

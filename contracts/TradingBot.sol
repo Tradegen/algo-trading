@@ -22,19 +22,12 @@ contract TradingBot is ITradingBot {
     using SafeMath for uint256;
     using CandlestickUtils for CandlestickUtils.Candlestick;
 
-    uint256 public constant MAX_MINT_FEE = 1000; // 10%, denominated in 10000.
-    uint256 public constant MAX_TRADE_FEE = 1000; // 10%, denominated in 10000.
-
     // Trading bot owner.
     address public override owner;
 
     // Contracts
     address public immutable factory;
     IComponents public immutable components;
-
-    // Fees
-    uint256 public override tokenMintFee;
-    uint256 public override tokenTradeFee;
 
     // Parameters
     string public name;
@@ -146,32 +139,6 @@ contract TradingBot is ITradingBot {
         emit GeneratedRules(_serializedEntryRules, _serializedExitRules);
     }
 
-    /**
-    * @dev Sets the mint fee for the trading bot's token.
-    * @notice This function can only be called by the trading bot's owner.
-    * @param _mintFee Mint fee for the trading bot's token. Denominated in 10000.
-    */
-    function setMintFee(uint256 _mintFee) external onlyOwner {
-        require(_mintFee >= 0 && _mintFee <= MAX_MINT_FEE, "TradingBot: mint fee out of range.");
-
-        tokenMintFee = _mintFee;
-
-        emit SetMintFee(_mintFee);
-    }
-
-    /**
-    * @dev Sets the trading fee for the trading bot's token.
-    * @notice This function can only be called by the trading bot's owner.
-    * @param _tradeFee Trading fee for the trading bot's token. Denominated in 10000.
-    */
-    function setTradeFee(uint256 _tradeFee) external onlyOwner {
-        require(_tradeFee >= 0 && _tradeFee <= MAX_TRADE_FEE, "TradingBot: trade fee out of range.");
-
-        tokenTradeFee = _tradeFee;
-
-        emit SetTradeFee(_tradeFee);
-    }
-
     /* ========== MODIFIERS ========== */
 
     modifier onlyOwner() {
@@ -197,8 +164,6 @@ contract TradingBot is ITradingBot {
     /* ========== EVENTS ========== */
 
     event UpdatedOwner(address newOwner);
-    event SetMintFee(uint256 mintFee);
-    event SetTradeFee(uint256 tradeFee);
     event Initialized(uint256 mintFee, uint256 tradeFee, uint256 timeframe, uint256 maxTradeDuration, uint256 profitTarget, uint256 stopLoss, address tradedAsset);
     event GeneratedRules(uint256[] serializedEntryRules, uint256[] serializedExitRules);
 }
