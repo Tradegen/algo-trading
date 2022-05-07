@@ -20,9 +20,9 @@ interface IComparator {
     function getName() external pure returns (string memory);
 
     /**
-    * @notice Returns whether the latest comparator update meets conditions.
+    * @notice Returns whether the latest comparator instance update meets conditions.
     */
-    function meetsConditions() external view returns (bool);
+    function meetsConditions(uint256 _instance) external view returns (bool);
 
     /**
     * @notice Returns whether the comparator instance can be updated.

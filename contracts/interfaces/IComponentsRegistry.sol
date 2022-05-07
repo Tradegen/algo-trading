@@ -19,6 +19,14 @@ interface IComponentsRegistry {
     function getComponentInfo(uint256 _componentID) external view returns (address, bool, address, uint256, uint256, string memory);
 
     /**
+     * @notice Returns whether the instance of the given comparator meets conditions.
+     * @param _comparatorID ID of the comparator.
+     * @param _instanceID ID of the comparator instance.
+     * @return bool Whether the latest update of the comparator's instance meets conditions.
+     */
+    function meetsConditions(uint256 _comparatorID, uint256 _instanceID) external view returns (bool);
+
+    /**
      * @notice Given the ID of an instance, returns the component instance's info.
      * @param _componentID ID of the component.
      * @param _instanceID ID of the component instance.

@@ -20,7 +20,8 @@ contract Closes is IComparator {
     address public immutable componentRegistry;
     address public immutable keeperRegistry;
 
-    bool public override meetsConditions;
+    // (instance number => whether the latest update meets conditions).
+    mapping (uint256 => bool) public override meetsConditions;
 
     // Keep track of total number of instances.
     // This ensures instance IDs are unique.
@@ -158,46 +159,46 @@ contract Closes is IComparator {
 
         if (keccak256(abi.encodePacked(IIndicator(instance.secondIndicatorAddress).getName())) == keccak256(abi.encodePacked("Up"))) {
             if (priceHistory.length == 0) {
-                meetsConditions = false;
+                meetsConditions[_instance] = false;
             }
 
             if (priceHistory.length > 1) {
                 for (uint256 i = 1; i < priceHistory.length; i++) {
                     if (priceHistory[i] <= priceHistory[i - 1]) {
-                        meetsConditions = false;
+                        meetsConditions[_instance] = false;
                     }
                 }
 
-                meetsConditions = true;
+                meetsConditions[_instance] = true;
             }
             else {
                 bool result = (priceHistory[0] > instance.variables[0]);
                 instances[_instance].variables[0] = priceHistory[0];
 
-                meetsConditions = result;
+                meetsConditions[_instance] = result;
             }
 
             updatedSuccessfully = true;
         }
         else if (keccak256(abi.encodePacked(IIndicator(instance.secondIndicatorAddress).getName())) == keccak256(abi.encodePacked("Down"))) {
             if (priceHistory.length == 0) {
-                meetsConditions = false;
+                meetsConditions[_instance] = false;
             }
 
             if (priceHistory.length > 1) {
                 for (uint256 i = 1; i < priceHistory.length; i++) {
                     if (priceHistory[i] >= priceHistory[i - 1]) {
-                        meetsConditions = false;
+                        meetsConditions[_instance] = false;
                     }
                 }
 
-                meetsConditions = true;
+                meetsConditions[_instance] = true;
             }
             else {
                 bool result = (priceHistory[0] < instance.variables[0]);
                 instances[_instance].variables[0] = priceHistory[0];
 
-                meetsConditions = result;
+                meetsConditions[_instance] = result;
             }
 
             updatedSuccessfully = true;

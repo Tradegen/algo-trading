@@ -20,7 +20,8 @@ contract IsAbove is IComparator {
     address public immutable componentRegistry;
     address public immutable keeperRegistry;
 
-    bool public override meetsConditions;
+    // (instance number => whether the latest update meets conditions).
+    mapping (uint256 => bool) public override meetsConditions;
 
     // Keep track of total number of instances.
     // This ensures instance IDs are unique.
@@ -157,12 +158,12 @@ contract IsAbove is IComparator {
         uint256[] memory secondIndicatorValue = IIndicator(instance.secondIndicatorAddress).getValue(instance.secondIndicatorInstance);
 
         if (firstIndicatorValue.length == 0 || secondIndicatorValue.length == 0) {
-            meetsConditions = false;
+            meetsConditions[_instance] = false;
             emit CheckedConditions(_instance);
             return true;
         }
 
-        meetsConditions = (firstIndicatorValue[firstIndicatorValue.length - 1] > secondIndicatorValue[secondIndicatorValue.length - 1]);
+        meetsConditions[_instance] = (firstIndicatorValue[firstIndicatorValue.length - 1] > secondIndicatorValue[secondIndicatorValue.length - 1]);
         emit CheckedConditions(_instance);
         return true;
     }

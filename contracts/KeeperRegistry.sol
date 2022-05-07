@@ -14,7 +14,7 @@ import './interfaces/IComponentsRegistry.sol';
 import './interfaces/ITradingBotRegistry.sol';
 import './interfaces/IIndicator.sol';
 import './interfaces/IComparator.sol';
-import './interfaces/ITradingBotLogic.sol';
+import './interfaces/ITradingBot.sol';
 import './Keeper.sol';
 
 // Inheritance.
@@ -240,7 +240,7 @@ contract KeeperRegistry is IKeeperRegistry, Ownable, ReentrancyGuard {
         else {
             require(tradingBotRegistry.checkInfoForUpkeep(msg.sender, _target), "KeeperRegistry: Invalid info for upkeep.");
 
-            ITradingBotLogic(_target).setKeeper(_keeper);
+            ITradingBot(_target).setKeeper(_keeper);
         }
 
         uint256 jobID = numberOfJobs.add(1);
@@ -295,7 +295,7 @@ contract KeeperRegistry is IKeeperRegistry, Ownable, ReentrancyGuard {
             IComparator(target).setKeeper(instanceID, address(0));
         }
         else if (jobType == 2) {
-            ITradingBotLogic(target).setKeeper(address(0));
+            ITradingBot(target).setKeeper(address(0));
         }
 
         _withdrawFunds(msg.sender, _jobID, availableFunds[_jobID]);

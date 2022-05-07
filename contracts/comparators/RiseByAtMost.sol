@@ -20,7 +20,8 @@ contract RiseByAtMost is IComparator {
     address public immutable componentRegistry;
     address public immutable keeperRegistry;
 
-    bool public override meetsConditions;
+    // (instance number => whether the latest update meets conditions).
+    mapping (uint256 => bool) public override meetsConditions;
 
     // Keep track of total number of instances.
     // This ensures instance IDs are unique.
@@ -157,19 +158,19 @@ contract RiseByAtMost is IComparator {
         uint256[] memory secondIndicatorValue = IIndicator(instance.secondIndicatorAddress).getValue(instance.secondIndicatorInstance);
 
         if (firstIndicatorValues.length < 2) {
-            meetsConditions = false;
+            meetsConditions[_instance] = false;
             emit CheckedConditions(_instance);
             return true;
         }
 
         // Check if indicator fell in value.
         if (firstIndicatorValues[firstIndicatorValues.length - 1] <= firstIndicatorValues[0]) {
-            meetsConditions = false;
+            meetsConditions[_instance] = false;
             emit CheckedConditions(_instance);
             return true;
         }
 
-        meetsConditions = ((firstIndicatorValues[firstIndicatorValues.length - 1].sub(firstIndicatorValues[0]).mul(1e18).mul(100).div(firstIndicatorValues[0])) <= secondIndicatorValue[0]);
+        meetsConditions[_instance] = ((firstIndicatorValues[firstIndicatorValues.length - 1].sub(firstIndicatorValues[0]).mul(1e18).mul(100).div(firstIndicatorValues[0])) <= secondIndicatorValue[0]);
         emit CheckedConditions(_instance);
         return true;
     }

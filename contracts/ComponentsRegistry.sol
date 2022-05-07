@@ -59,6 +59,18 @@ contract ComponentsRegistry is IComponentsRegistry, IComponent, Ownable {
     }
 
     /**
+     * @notice Returns whether the instance of the given comparator meets conditions.
+     * @param _comparatorID ID of the comparator.
+     * @param _instanceID ID of the comparator instance.
+     * @return bool Whether the latest update of the comparator's instance meets conditions.
+     */
+    function meetsConditions(uint256 _comparatorID, uint256 _instanceID) external view override returns (bool) {
+        (,, address contractAddress,,) = componentsFactory.getComponentInfo(_comparatorID);
+
+        return IComparator(contractAddress).meetsConditions(_instanceID);
+    }
+
+    /**
      * @notice Returns the fee for creating an instance of this component.
      * @param _componentID ID of the component.
      * @return (uint256) The fee for creating an instance of this component.
