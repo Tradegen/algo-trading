@@ -10,6 +10,14 @@ interface ITradingBot {
         uint256 profitTarget;
         uint256 stopLoss;
         address tradedAsset;
+        uint256 assetTimeframe;
+    }
+
+    struct BotState {
+        bool inTrade;
+        uint256 entryPrice;
+        uint256 entryIndex;
+        uint256 lastUpdateIndex;
     }
 
     /* ========== VIEWS ========== */
@@ -21,9 +29,9 @@ interface ITradingBot {
 
     /**
     * @notice Returns the parameters of this trading bot.
-    * @return (uint256, uint256, uint256, uint256, address) The trading bot's timeframe (in minutes), max trade duration, profit target, stop loss, and traded asset address.
+    * @return (uint256, uint256, uint256, uint256, address, uint256) The trading bot's timeframe (in minutes), max trade duration, profit target, stop loss, the traded asset address, and the asset's timeframe.
     */
-    function getTradingBotParameters() external view returns (uint256, uint256, uint256, uint256, address);
+    function getTradingBotParameters() external view returns (uint256, uint256, uint256, uint256, address, uint256);
 
     /**
     * @notice Returns whether the trading bot can be updated.
@@ -32,9 +40,11 @@ interface ITradingBot {
 
     /**
     * @notice Returns the state of the trading bot.
-    * @return (bool, uint256, uint256) Whether the bot is in a trade, the entry price, and the update number at which the trade was made.
+    * @return (bool, uint256, uint256, uint256) Whether the bot is in a trade, the entry price, the update number at which the trade was made, and the latest update number.
     */
-    function getState() external view returns (bool, uint256, uint256);
+    function getState() external view returns (bool, uint256, uint256, uint256);
+
+    /* ========== MUTATIVE FUNCTIONS ========== */
 
     /**
     * @notice Checks whether the trading bot owner has access to each entry/exit rule.
@@ -44,9 +54,7 @@ interface ITradingBot {
     * @param _exitRuleInstances An array of component instance IDs used in exit rules.
     * @return bool Whether the bot owner has purchased each entry/exit rule.
     */
-    function checkInitialRules(uint256[] memory _entryRuleComponents, uint256[] memory _entryRuleInstances, uint256[] memory _exitRuleComponents, uint256[] memory _exitRuleInstances) external view returns (bool);
-
-    /* ========== MUTATIVE FUNCTIONS ========== */
+    function checkInitialRules(uint256[] memory _entryRuleComponents, uint256[] memory _entryRuleInstances, uint256[] memory _exitRuleComponents, uint256[] memory _exitRuleInstances) external returns (bool);
 
     /**
     * @notice Updates the owner of this trading bot.
@@ -157,4 +165,12 @@ interface ITradingBot {
     * @param _newStopLoss The new stop loss %, denominated in 10000. 
     */
     function updateStopLoss(uint256 _newStopLoss) external;
+
+    /**
+    * @notice Sets the address of the trading bot's BotPerformanceDataFeed contract.
+    * @dev This function can only be called once by the TradingBotRegistry contract.
+    * @dev Trading bots only have a data feed once they are published to the platform.
+    * @param _dataFeed Address of the BotPerformanceDataFeed contract.
+    */
+    function setDataFeed(address _dataFeed) external;
 }
