@@ -3,13 +3,13 @@
 pragma solidity ^0.8.3;
 
 // OpenZeppelin
-import "./openzeppelin-solidity/contracts/Ownable.sol";
+import "../openzeppelin-solidity/contracts/Ownable.sol";
 
 // Interfaces
-import "./interfaces/IPriceAggregator.sol";
+import "../interfaces/deprecated/IPriceAggregator.sol";
 
 // Inheritance
-import "./interfaces/IPriceAggregatorRouter.sol";
+import "../interfaces/deprecated/IPriceAggregatorRouter.sol";
 
 contract PriceAggregatorRouter is IPriceAggregatorRouter, Ownable {
 

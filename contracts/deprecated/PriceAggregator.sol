@@ -3,11 +3,11 @@
 pragma solidity ^0.8.3;
 
 // OpenZeppelin
-import "./openzeppelin-solidity/contracts/SafeMath.sol";
-import "./openzeppelin-solidity/contracts/Ownable.sol";
+import "../openzeppelin-solidity/contracts/SafeMath.sol";
+import "../openzeppelin-solidity/contracts/Ownable.sol";
 
 // Inheritance
-import "./interfaces/IPriceAggregator.sol";
+import "../interfaces/deprecated/IPriceAggregator.sol";
 
 contract PriceAggregator is IPriceAggregator, Ownable {
     using SafeMath for uint256;
