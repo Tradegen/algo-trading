@@ -28,6 +28,11 @@ interface ITradingBot {
     function owner() external view returns (address);
 
     /**
+     * @notice Returns the address of the trading bot's BotPerformanceDataFeed contract.
+     */
+    function dataFeed() external view returns (address);
+
+    /**
     * @notice Returns the parameters of this trading bot.
     * @return (uint256, uint256, uint256, uint256, string, uint256) The trading bot's timeframe (in minutes), max trade duration, profit target, stop loss, the traded asset symbol, and the asset's timeframe.
     */
@@ -58,7 +63,7 @@ interface ITradingBot {
 
     /**
     * @notice Updates the owner of this trading bot.
-    * @dev This function is meant to be called by the TradingBotRegistry contract.
+    * @dev This function is meant to be called by the TradingBots NFT contract.
     * @param _newOwner Address of the new owner.
     */
     function updateOwner(address _newOwner) external;

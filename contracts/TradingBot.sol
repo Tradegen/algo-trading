@@ -21,16 +21,17 @@ contract TradingBot is ITradingBot {
     address public override owner;
 
     address public operator;
-
     address public keeper;
 
-    address public dataFeed;
+    // Address of the BotPerformanceDataFeed contract.
+    address public override dataFeed;
 
     // Contracts.
     IComponentsRegistry public immutable componentsRegistry;
     ICandlestickDataFeedRegistry public immutable candlestickDataFeedRegistry;
     ITradingBotRegistry public immutable tradingBotRegistry;
     address public immutable keeperRegistry;
+    address public immutable tradingBots;
 
     // Parameters.
     string public name;
@@ -51,12 +52,13 @@ contract TradingBot is ITradingBot {
     bool public setRules;
     uint256 public numberOfUpdates;
 
-    constructor(address _owner, address _componentsRegistry, address _candlestickDataFeedRegistry, address _tradingBotRegistry, address _keeperRegistry) {
+    constructor(address _owner, address _componentsRegistry, address _candlestickDataFeedRegistry, address _tradingBotRegistry, address _keeperRegistry, address _tradingBots) {
         require(_owner != address(0), "TradingBot: Invalid address for _owner.");
         require(_componentsRegistry != address(0), "TradingBot: Invalid address for _componentsRegistry.");
         require(_candlestickDataFeedRegistry != address(0), "TradingBot: Invalid address for _candlestickDataFeedRegistry.");
         require(_tradingBotRegistry != address(0), "TradingBot: Invalid address for _tradingBotRegistry.");
         require(_keeperRegistry != address(0), "TradingBot: Invalid address for _keeperRegistry.");
+        require(_tradingBots != address(0), "TradingBot: Invalid address for _tradingBots.");
         
         // Initialize contracts.
         owner = _owner;
@@ -65,6 +67,7 @@ contract TradingBot is ITradingBot {
         candlestickDataFeedRegistry = ICandlestickDataFeedRegistry(_candlestickDataFeedRegistry);
         tradingBotRegistry = ITradingBotRegistry(_tradingBotRegistry);
         keeperRegistry = _keeperRegistry;
+        tradingBots = _tradingBots;
     }
 
     /* ========== VIEWS ========== */
@@ -136,10 +139,10 @@ contract TradingBot is ITradingBot {
 
     /**
     * @notice Updates the owner of this trading bot.
-    * @dev This function is meant to be called by the TradingBotRegistry contract.
+    * @dev This function is meant to be called by the TradingBots NFT contract.
     * @param _newOwner Address of the new owner.
     */
-    function updateOwner(address _newOwner) external override onlyTradingBotRegistry {
+    function updateOwner(address _newOwner) external override onlyTradingBots {
         require(_newOwner != address(0), "TradingBot: Invalid address for new owner.");
 
         owner = _newOwner;
@@ -147,7 +150,7 @@ contract TradingBot is ITradingBot {
         emit UpdatedOwner(_newOwner);
     }
 
-   /**
+    /**
     * @notice Initializes the parameters for the trading bot.
     * @dev This function is meant to be called by the TradingBotRegistry contract when creating a trading bot.
     * @param _name Name of the trading bot.
@@ -475,6 +478,12 @@ contract TradingBot is ITradingBot {
         require(msg.sender == keeperRegistry, "TradingBot: Only the KeeperRegistry contract can call this function.");
         _;
     }
+
+    modifier onlyTradingBots() {
+        require(msg.sender == tradingBots, "TradingBot: Only the TradingBots NFT contract can call this function.");
+        _;
+    }
+
 
     modifier onlyTradingBotRegistry() {
         require(msg.sender == address(tradingBotRegistry), "TradingBot: Only the TradingBotRegistry contract can call this function.");
