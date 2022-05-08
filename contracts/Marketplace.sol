@@ -3,14 +3,14 @@
 pragma solidity ^0.8.3;
 pragma experimental ABIEncoderV2;
 
-//Openzeppelin
+//Openzeppelin.
 import "./openzeppelin-solidity/contracts/SafeMath.sol";
 import "./openzeppelin-solidity/contracts/Ownable.sol";
 import "./openzeppelin-solidity/contracts/ERC20/SafeERC20.sol";
 import "./openzeppelin-solidity/contracts/ERC1155/IERC1155.sol";
 import "./openzeppelin-solidity/contracts/ERC1155/ERC1155Holder.sol";
 
-//Inheritance
+//Inheritance.
 import './interfaces/IMarketplace.sol';
 
 contract Marketplace is IMarketplace, ERC1155Holder, Ownable {
@@ -43,10 +43,10 @@ contract Marketplace is IMarketplace, ERC1155Holder, Ownable {
     mapping (address => mapping (bool => mapping(uint256 => uint256))) public userToListingIndex; 
 
     constructor(address _components, address _tradingBots, address _TGEN, address _xTGEN) Ownable() {
-        require(_components != address(0), "Marketplace: invalid address for Components conrtact.");
-        require(_tradingBots != address(0), "Marketplace: invalid address for TradingBots conrtact.");
-        require(_TGEN != address(0), "Marketplace: invalid address for TGEN.");
-        require(_xTGEN != address(0), "Marketplace: invalid address for xTGEN.");
+        require(_components != address(0), "Marketplace: Invalid address for Components contract.");
+        require(_tradingBots != address(0), "Marketplace: Invalid address for TradingBots contract.");
+        require(_TGEN != address(0), "Marketplace: Invalid address for TGEN.");
+        require(_xTGEN != address(0), "Marketplace: Invalid address for xTGEN.");
 
         components = IERC1155(_components);
         tradingBots = IERC1155(_tradingBots);
@@ -57,8 +57,8 @@ contract Marketplace is IMarketplace, ERC1155Holder, Ownable {
     /* ========== VIEWS ========== */
 
     /**
-    * @dev Given an NFT ID, returns its listing index.
-    * @notice Returns 0 if the NFT with the given ID is not listed.
+    * @notice Given an NFT ID, returns its listing index.
+    * @dev Returns 0 if the NFT with the given ID is not listed.
     * @param _ID Token ID of the indicator/comparator NFT.
     * @param _isTradingBot Whether the NFT is a trading bot.
     * @return (uint256) Listing index of the indicator/comparator NFT.
@@ -68,8 +68,8 @@ contract Marketplace is IMarketplace, ERC1155Holder, Ownable {
     }
 
     /**
-    * @dev Given the index of a marketplace listing, returns the listing's data
-    * @param _index Index of the marketplace listing
+    * @notice Given the index of a marketplace listing, returns the listing's data.
+    * @param _index Index of the marketplace listing.
     * @return (address, bool, bool, uint256, uint256) Address of the seller, whether the listing exists, whether the NFT is a trading bot, NFT ID, and the price (in TGEN).
     */
     function getMarketplaceListing(uint256 _index) external view override indexInRange(_index) returns (address, bool, bool, uint256, uint256) {
@@ -81,7 +81,7 @@ contract Marketplace is IMarketplace, ERC1155Holder, Ownable {
     /* ========== MUTATIVE FUNCTIONS ========== */
 
     /**
-    * @dev Purchases the indicator/comparator NFT at the given listing index.
+    * @notice Purchases the indicator/comparator NFT at the given listing index.
     * @param _index Index of the marketplace listing.
     */
     function purchase(uint256 _index) external override indexInRange(_index) {
@@ -115,7 +115,7 @@ contract Marketplace is IMarketplace, ERC1155Holder, Ownable {
     }
 
     /**
-    * @dev Creates a new marketplace listing with the given price and NFT ID.
+    * @notice Creates a new marketplace listing with the given price and NFT ID.
     * @param _ID ID of the indicator/comparator NFT.
     * @param _isTradingBot Whether the NFT is a trading bot.
     * @param _price TGEN price of the NFT.
@@ -142,7 +142,7 @@ contract Marketplace is IMarketplace, ERC1155Holder, Ownable {
     }
 
     /**
-    * @dev Removes the marketplace listing at the given index.
+    * @notice Removes the marketplace listing at the given index.
     * @param _index Index of the marketplace listing.
     */
     function removeListing(uint256 _index) external override indexInRange(_index) onlySeller(_index) {
@@ -164,12 +164,12 @@ contract Marketplace is IMarketplace, ERC1155Holder, Ownable {
     }
 
     /**
-    * @dev Updates the price of the given marketplace listing.
+    * @notice Updates the price of the given marketplace listing.
     * @param _index Index of the marketplace listing.
     * @param _newPrice TGEN price of the NFT.
     */
     function updatePrice(uint256 _index, uint256 _newPrice) external override indexInRange(_index) onlySeller(_index) {
-        require(_newPrice > 0, "Marketplace: New price must be greater than 0");
+        require(_newPrice > 0, "Marketplace: New price must be greater than 0.");
 
         marketplaceListings[_index].price = _newPrice;
 
@@ -179,13 +179,13 @@ contract Marketplace is IMarketplace, ERC1155Holder, Ownable {
     /* ========== RESTRICTED FUNCTIONS ========== */
 
     /**
-    * @dev Updates the transaction fee.
-    * @notice This function is meant to be called by the contract deployer.
+    * @notice Updates the transaction fee.
+    * @dev This function is meant to be called by the contract deployer.
     * @param _newFee The new transaction fee.
     */
     function setTransactionFee(uint256 _newFee) external onlyOwner {
-        require(_newFee >= 0, "Marketplace: new fee must be positive.");
-        require(_newFee <= MAX_TRANSACTION_FEE, "Marketplace: new fee is too high.");
+        require(_newFee >= 0, "Marketplace: New fee must be positive.");
+        require(_newFee <= MAX_TRANSACTION_FEE, "Marketplace: New fee is too high.");
 
         transactionFee = _newFee;
 
@@ -195,7 +195,7 @@ contract Marketplace is IMarketplace, ERC1155Holder, Ownable {
     /* ========== INTERNAL FUNCTIONS ========== */
 
     /**
-    * @dev Sets the marketplace listing's 'exists' variable to false.
+    * @notice Sets the marketplace listing's 'exists' variable to false.
     * @param _user Address of the seller.
     * @param _isTradingBot Whether the NFT is a trading bot.
     * @param _index Index of the marketplace listing.

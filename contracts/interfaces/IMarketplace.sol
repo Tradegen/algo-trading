@@ -14,8 +14,8 @@ interface IMarketplace {
     }
 
     /**
-    * @dev Given an NFT ID, returns its listing index.
-    * @notice Returns 0 if the NFT with the given ID is not listed.
+    * @notice Given an NFT ID, returns its listing index.
+    * @dev Returns 0 if the NFT with the given ID is not listed.
     * @param _ID Token ID of the indicator/comparator NFT.
     * @param _isTradingBot Whether the NFT is a trading bot.
     * @return (uint256) Listing index of the indicator/comparator NFT.
@@ -23,20 +23,20 @@ interface IMarketplace {
     function getListingIndex(uint256 _ID, bool _isTradingBot) external view returns (uint256);
 
     /**
-    * @dev Given the index of a marketplace listing, returns the listing's data
+    * @notice Given the index of a marketplace listing, returns the listing's data
     * @param _index Index of the marketplace listing
     * @return (address, bool, bool, uint256, uint256) Address of the seller, whether the listing exists, whether the NFT is a trading bot, NFT ID, and the price (in TGEN).
     */
     function getMarketplaceListing(uint256 _index) external view returns (address, bool, bool, uint256, uint256);
 
     /**
-    * @dev Purchases the indicator/comparator NFT at the given listing index.
+    * @notice Purchases the indicator/comparator NFT at the given listing index.
     * @param _index Index of the marketplace listing.
     */
     function purchase(uint256 _index) external;
 
     /**
-    * @dev Creates a new marketplace listing with the given price and NFT ID.
+    * @notice Creates a new marketplace listing with the given price and NFT ID.
     * @param _ID ID of the indicator/comparator NFT.
     * @param _isTradingBot Whether the NFT is a trading bot.
     * @param _price TGEN price of the NFT.
@@ -44,13 +44,13 @@ interface IMarketplace {
     function createListing(uint256 _ID, bool _isTradingBot, uint256 _price) external;
 
     /**
-    * @dev Removes the marketplace listing at the given index.
+    * @notice Removes the marketplace listing at the given index.
     * @param _index Index of the marketplace listing.
     */
     function removeListing(uint256 _index) external;
 
     /**
-    * @dev Updates the price of the given marketplace listing.
+    * @notice Updates the price of the given marketplace listing.
     * @param _index Index of the marketplace listing.
     * @param _newPrice TGEN price of the NFT.
     */
