@@ -26,7 +26,7 @@ contract TradingBotRegistry is ITradingBotRegistry, Ownable {
     uint256 public MAX_TRADING_BOTS_PER_USER;
     uint256 public MINT_FEE;
 
-    address public tradingBotNFT;
+    ITradingBots public immutable tradingBotNFT;
     IBotPerformanceDataFeedRegistry public immutable botPerformanceDataFeedRegistry;
     IComponentsRegistry public immutable componentsRegistry;
     ITradingBotFactory public immutable tradingBotFactory;
@@ -43,7 +43,8 @@ contract TradingBotRegistry is ITradingBotRegistry, Ownable {
     mapping (address => uint256) public tradingBotIndexes;
     mapping (uint256 => TradingBotInfo) public tradingBotInfos;
 
-    constructor(address _botPerformanceDataFeedRegistry, address _componentsRegistry, address _tradingBotFactory, address _candlestickDataFeedRegistry, address _feeToken, address _xTGEN) Ownable() {
+    constructor(address _tradingBotNFT, address _botPerformanceDataFeedRegistry, address _componentsRegistry, address _tradingBotFactory, address _candlestickDataFeedRegistry, address _feeToken, address _xTGEN) Ownable() {
+        tradingBotNFT = ITradingBots(_tradingBotNFT);
         botPerformanceDataFeedRegistry = IBotPerformanceDataFeedRegistry(_botPerformanceDataFeedRegistry);
         componentsRegistry = IComponentsRegistry(_componentsRegistry);
         tradingBotFactory = ITradingBotFactory(_tradingBotFactory);
@@ -327,7 +328,7 @@ contract TradingBotRegistry is ITradingBotRegistry, Ownable {
         feeToken.safeTransferFrom(msg.sender, address(this), MINT_FEE);
         feeToken.safeTransfer(xTGEN, MINT_FEE);
 
-        ITradingBots(tradingBotNFT).mintTradingBot(_index, tradingBotInfos[_index].owner);
+        tradingBotNFT.mintTradingBot(_index, tradingBotInfos[_index].owner, tradingBotAddresses[_index]);
         tradingBotInfos[_index].status = 5;
 
         emit MintedTradingBot(_index, MINT_FEE);

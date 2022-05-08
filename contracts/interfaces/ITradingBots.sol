@@ -8,6 +8,7 @@ interface ITradingBots {
     * @dev This function can only be called by the TradingBotRegistry contract.
     * @param _tokenID ID to use for the trading bot token.
     * @param _owner Address of the trading bot owner (the recipient of the NFT).
+    * @param _tradingBot Address of the trading bot contract.
     */
-    function mintTradingBot(uint256 _tokenID, address _owner) external;
+    function mintTradingBot(uint256 _tokenID, address _owner, address _tradingBot) external;
 }
