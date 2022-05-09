@@ -16,4 +16,8 @@ contract TestCandlestickDataFeedRegistry {
     function getCurrentPrice(string memory _asset, uint256 _timeframe) external view returns (uint256) {
         return prices[_asset][_timeframe];
     }
+
+    function getCurrentTimestamp() external view returns (uint256) {
+        return block.timestamp;
+    }
 }
