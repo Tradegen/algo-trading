@@ -12,18 +12,13 @@ import './TradingBot.sol';
 import './interfaces/ITradingBotFactory.sol';
 
 contract TradingBotFactory is ITradingBotFactory, Ownable {
-    address public immutable componentsRegistry;
-    address public immutable candlestickDataFeedRegistry;
-    address public tradingBotRegistry;
-    address public immutable keeperRegistry;
-    address public immutable tradingBotNFT;
+    address immutable componentsRegistry;
+    address immutable candlestickDataFeedRegistry;
+    address tradingBotRegistry;
+    address immutable keeperRegistry;
+    address immutable tradingBotNFT;
 
     constructor(address _componentsRegistry, address _candlestickDataFeedRegistry, address _keeperRegistry, address _tradingBotNFT) Ownable() {
-        require(_componentsRegistry != address(0), "TradingBotFactory: Invalid address for _componentsRegistry.");
-        require(_candlestickDataFeedRegistry != address(0), "TradingBotFactory: Invalid address for _candlestickDataFeedRegistry.");
-        require(_keeperRegistry != address(0), "TradingBotFactory: Invalid address for _keeperRegistry.");
-        require(_tradingBotNFT != address(0), "TradingBotFactory: Invalid address for _tradingBotNFT.");
-
         componentsRegistry = _componentsRegistry;
         candlestickDataFeedRegistry = _candlestickDataFeedRegistry;
         keeperRegistry = _keeperRegistry;
@@ -56,8 +51,6 @@ contract TradingBotFactory is ITradingBotFactory, Ownable {
     * @param _tradingBotRegistry Address of the TradingBotRegistry contract.
     */
     function setTradingBotRegistry(address _tradingBotRegistry) external onlyOwner {
-        require(tradingBotRegistry == address(0), "TradingBotFactory: Already set TradingBotRegistry.");
-
         tradingBotRegistry = _tradingBotRegistry;
 
         emit SetTradingBotRegistry(_tradingBotRegistry);

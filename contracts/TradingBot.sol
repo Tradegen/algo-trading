@@ -27,11 +27,11 @@ contract TradingBot is ITradingBot {
     address public override dataFeed;
 
     // Contracts.
-    IComponentsRegistry public immutable componentsRegistry;
-    ICandlestickDataFeedRegistry public immutable candlestickDataFeedRegistry;
-    ITradingBotRegistry public immutable tradingBotRegistry;
-    address public immutable keeperRegistry;
-    address public immutable tradingBots;
+    IComponentsRegistry immutable componentsRegistry;
+    ICandlestickDataFeedRegistry immutable candlestickDataFeedRegistry;
+    ITradingBotRegistry immutable tradingBotRegistry;
+    address immutable keeperRegistry;
+    address immutable tradingBots;
 
     // Parameters.
     string public name;
@@ -53,13 +53,6 @@ contract TradingBot is ITradingBot {
     uint256 public numberOfUpdates;
 
     constructor(address _owner, address _componentsRegistry, address _candlestickDataFeedRegistry, address _tradingBotRegistry, address _keeperRegistry, address _tradingBots) {
-        require(_owner != address(0), "TradingBot: Invalid address for _owner.");
-        require(_componentsRegistry != address(0), "TradingBot: Invalid address for _componentsRegistry.");
-        require(_candlestickDataFeedRegistry != address(0), "TradingBot: Invalid address for _candlestickDataFeedRegistry.");
-        require(_tradingBotRegistry != address(0), "TradingBot: Invalid address for _tradingBotRegistry.");
-        require(_keeperRegistry != address(0), "TradingBot: Invalid address for _keeperRegistry.");
-        require(_tradingBots != address(0), "TradingBot: Invalid address for _tradingBots.");
-        
         // Initialize contracts.
         owner = _owner;
         operator = _owner;
