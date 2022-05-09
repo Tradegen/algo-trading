@@ -15,7 +15,7 @@ import './interfaces/ITradingBotRegistry.sol';
 import './interfaces/IIndicator.sol';
 import './interfaces/IComparator.sol';
 import './interfaces/ITradingBot.sol';
-import './Keeper.sol';
+import './interfaces/IKeeperFactory.sol';
 
 // Inheritance.
 import './interfaces/IKeeperRegistry.sol';
@@ -32,6 +32,7 @@ contract KeeperRegistry is IKeeperRegistry, Ownable, ReentrancyGuard {
     IERC20 immutable feeToken;
     IComponentsRegistry immutable componentsRegistry;
     ITradingBotRegistry immutable tradingBotRegistry;
+    IKeeperFactory immutable keeperFactory;
 
     // (job ID => job info).
     mapping (uint256 => Upkeep) public upkeeps;
@@ -62,10 +63,11 @@ contract KeeperRegistry is IKeeperRegistry, Ownable, ReentrancyGuard {
     // This ensures job IDs are strictly increasing.
     uint256 public numberOfJobs;
 
-    constructor(address _feeToken, address _componentsRegistry, address _tradingBotRegistry) Ownable() {
+    constructor(address _feeToken, address _componentsRegistry, address _tradingBotRegistry, address _keeperFactory) Ownable() {
         feeToken = IERC20(_feeToken);
         componentsRegistry = IComponentsRegistry(_componentsRegistry);
         tradingBotRegistry = ITradingBotRegistry(_tradingBotRegistry);
+        keeperFactory = IKeeperFactory(_keeperFactory);
     }
 
     /* ========== VIEWS ========== */
@@ -171,7 +173,7 @@ contract KeeperRegistry is IKeeperRegistry, Ownable, ReentrancyGuard {
         require(_fee <= MAX_KEEPER_FEE, "KeeperRegistry: Keeper fee is too high.");
 
         // Create a Keeper contract.
-        address keeperAddress = address(new Keeper(msg.sender, _caller));
+        address keeperAddress = keeperFactory.createKeeper(msg.sender, _caller);
 
         userToKeeper[msg.sender] = keeperAddress;
         keepers[keeperAddress] = KeeperInfo({
