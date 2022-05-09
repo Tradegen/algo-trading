@@ -11,7 +11,6 @@ import "../interfaces/deprecated/IPriceAggregator.sol";
 
 contract PriceAggregator is IPriceAggregator, Ownable {
     using SafeMath for uint256;
-    using CandlestickUtils for CandlestickUtils.Candlestick;
 
     /* ========== STATE VARIABLES ========== */
 
@@ -19,7 +18,7 @@ contract PriceAggregator is IPriceAggregator, Ownable {
 
     // Contracts.
     address public oracle;
-    address public immutable override asset;
+    string public asset;
 
     // Used for tracking target time.
     uint256 public lastUpdated;
@@ -29,17 +28,18 @@ contract PriceAggregator is IPriceAggregator, Ownable {
 
     // Historical data.
     uint256 public override numberOfCandlesticks;
-    mapping (uint256 => CandlestickUtils.Candlestick) public prices; // Starts at index 0.
+
+    // Starts at index 0.
+    mapping (uint256 => Candlestick) public prices;
 
     // Pending data.
     uint256 public numberOfUpdates;
-    CandlestickUtils.Candlestick public currentCandlestick;
+    Candlestick public currentCandlestick;
 
     /* ========== CONSTRUCTOR ========== */
 
-    constructor(address _oracle, address _asset) Ownable() {
-        require(_oracle != address(0), "PriceAggregator: invalid address for oracle.");
-        require(_asset != address(0), "PriceAggregator: invalid address for asset.");
+    constructor(address _oracle, string memory _asset) Ownable() {
+        require(_oracle != address(0), "PriceAggregator: Invalid address for oracle.");
 
         oracle = _oracle;
         asset = _asset;
@@ -50,30 +50,37 @@ contract PriceAggregator is IPriceAggregator, Ownable {
     /* ========== VIEWS ========== */
 
     /**
-     * @dev Returns the most recent completed candlestick.
-     * @notice Doesn't account for the candlestick currently forming.
+     * @notice Returns the symbol of this PriceAggregator's asset.
+     */
+    function getAsset() external view override returns (string memory) {
+        return asset;
+    }
+
+    /**
+     * @notice Returns the most recent completed candlestick.
+     * @dev Doesn't account for the candlestick currently forming.
      * @return (Candlestick) Latest candlestick for this asset.
      */
-    function getCurrentPrice() external view override returns (CandlestickUtils.Candlestick memory) {
+    function getCurrentPrice() external view override returns (Candlestick memory) {
         return prices[numberOfCandlesticks];
     }
 
     /**
-     * @dev Returns the candlestick currently forming.
+     * @notice Returns the candlestick currently forming.
      * @return (Candlestick) Latest candlestick for this asset.
      */
-    function getPendingPrice() external view override returns (CandlestickUtils.Candlestick memory) {
+    function getPendingPrice() external view override returns (Candlestick memory) {
         return currentCandlestick;
     }
 
      /**
-     * @dev Returns the candlestick at the given index.
-     * @notice Doesn't account for the candlestick currently forming.
+     * @notice Returns the candlestick at the given index.
+     * @dev Doesn't account for the candlestick currently forming.
      * @param _index Index of the candlestick.
      * @return (Candlestick) Latest candlestick for this asset.
      */
-    function getPriceAt(uint256 _index) external view override returns (CandlestickUtils.Candlestick memory) {
-        require(_index >= 0, "PriceAggregator: index must be positive.");
+    function getPriceAt(uint256 _index) external view override returns (Candlestick memory) {
+        require(_index >= 0, "PriceAggregator: Index must be positive.");
 
         return prices[_index];
     }
@@ -81,8 +88,8 @@ contract PriceAggregator is IPriceAggregator, Ownable {
     /* ========== MUTATIVE FUNCTIONS ========== */
 
     /**
-     * @dev Updates the Candlestick struct based on the latest price from the asset's dedicated oracle.
-     * @notice This function is meant to be called once every 30 seconds by the dedicated oracle contract.
+     * @notice Updates the Candlestick struct based on the latest price from the asset's dedicated oracle.
+     * @dev This function is meant to be called once every 30 seconds by the dedicated oracle contract.
      * @param _latestPrice The latest price from the asset's oracle.
      */
     function onPriceFeedUpdate(uint256 _latestPrice) external override onlyOracle {
@@ -123,7 +130,7 @@ contract PriceAggregator is IPriceAggregator, Ownable {
             emit NewCandlestick(asset, currentCandlestick.startingTimestamp, currentCandlestick.endingTimestamp, currentCandlestick.open, currentCandlestick.close, currentCandlestick.high, currentCandlestick.low);
 
             // Initialize the next candlestick.
-            currentCandlestick = CandlestickUtils.Candlestick({
+            currentCandlestick = Candlestick({
                 asset: asset,
                 startingTimestamp: block.timestamp,
                 endingTimestamp: 0,
@@ -143,12 +150,12 @@ contract PriceAggregator is IPriceAggregator, Ownable {
     /* ========== RESTRICTED FUNCTIONS ========== */
 
     /**
-     * @dev Updates the address of the contract's oracle.
-     * @notice This function is meant to be called by the contract owner.
+     * @notice Updates the address of the contract's oracle.
+     * @dev This function is meant to be called by the contract owner.
      * @param _newOracle Address of the new oracle contract.
      */
     function setOracle(address _newOracle) external onlyOwner {
-        require(_newOracle != address(0), "PriceAggregator: invalid address for new oracle.");
+        require(_newOracle != address(0), "PriceAggregator: Invalid address for new oracle.");
 
         oracle = _newOracle;
 
@@ -158,7 +165,7 @@ contract PriceAggregator is IPriceAggregator, Ownable {
     /* ========== MODIFIERS ========== */
 
     modifier onlyOracle() {
-        require(msg.sender == oracle, "PriceAggregator: only the pracle can call this function.");
+        require(msg.sender == oracle, "PriceAggregator: Only the pracle can call this function.");
         _;
     }
 
@@ -166,5 +173,5 @@ contract PriceAggregator is IPriceAggregator, Ownable {
 
     event UpdatedPriceFeed(uint256 latestPrice);
     event SetOracle(address oracleAddress);
-    event NewCandlestick(address asset, uint256 startingTimestamp, uint256 endingTimestamp, uint256 open, uint256 close, uint256 high, uint256 low);
+    event NewCandlestick(string asset, uint256 startingTimestamp, uint256 endingTimestamp, uint256 open, uint256 close, uint256 high, uint256 low);
 }

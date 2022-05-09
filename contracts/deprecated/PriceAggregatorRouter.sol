@@ -2,21 +2,21 @@
 
 pragma solidity ^0.8.3;
 
-// OpenZeppelin
+// OpenZeppelin.
 import "../openzeppelin-solidity/contracts/Ownable.sol";
 
-// Interfaces
+// Interfaces.
 import "../interfaces/deprecated/IPriceAggregator.sol";
 
-// Inheritance
+// Inheritance.
 import "../interfaces/deprecated/IPriceAggregatorRouter.sol";
 
 contract PriceAggregatorRouter is IPriceAggregatorRouter, Ownable {
 
     /* ========== STATE VARIABLES ========== */
 
-    // Address of asset => address of asset's PriceAggregator contract.
-    mapping (address => address) public priceAggregators;
+    // Symbol of asset => address of asset's PriceAggregator contract.
+    mapping (string => address) public priceAggregators;
 
     /* ========== CONSTRUCTOR ========== */
 
@@ -25,28 +25,25 @@ contract PriceAggregatorRouter is IPriceAggregatorRouter, Ownable {
     /* ========== VIEWS ========== */
 
     /**
-     * @dev Returns the address of the PriceAggregator contract for the given asset.
-     * @notice Returns address(0) if the given asset doesn't have a PriceAggregator.
-     * @param _asset Address of the asset.
+     * @notice Returns the address of the PriceAggregator contract for the given asset.
+     * @dev Returns address(0) if the given asset doesn't have a PriceAggregator.
+     * @param _asset Symbol of the asset.
      * @return (address) Address of the asset's PriceAggregator contract.
      */
-    function getPriceAggregator(address _asset) external view override returns (address) {
-        require(_asset != address(0), "PriceAggregatorRouter: invalid address for asset.");
-
+    function getPriceAggregator(string memory _asset) external view override returns (address) {
         return priceAggregators[_asset];
     }
 
     /* ========== RESTRICTED FUNCTIONS ========== */
 
     /**
-     * @dev Set the PriceAggregator contract for the given asset.
-     * @param _asset Address of the asset.
+     * @notice Set the PriceAggregator contract for the given asset.
+     * @param _asset Symbol of the asset.
      * @param _priceAggregator Address of the PriceAggregator contract.
      */
-    function setPriceAggregator(address _asset, address _priceAggregator) external onlyOwner {
-        require(_asset != address(0), "PriceAggregatorRouter: invalid address for asset.");
-        require(_priceAggregator != address(0), "PriceAggregatorRouter: invalid address for price aggregator.");
-        require(IPriceAggregator(_priceAggregator).asset() == _asset, "PriceAggregatorRouter: given asset does not match price aggregator's asset.");
+    function setPriceAggregator(string memory _asset, address _priceAggregator) external onlyOwner {
+        require(_priceAggregator != address(0), "PriceAggregatorRouter: Invalid address for price aggregator.");
+        require(keccak256(abi.encodePacked(IPriceAggregator(_priceAggregator).getAsset())) == keccak256(abi.encodePacked(_asset)), "PriceAggregatorRouter: Given asset does not match price aggregator's asset.");
 
         priceAggregators[_asset] = _priceAggregator;
 
@@ -55,5 +52,5 @@ contract PriceAggregatorRouter is IPriceAggregatorRouter, Ownable {
 
     /* ========== EVENTS ========== */
 
-    event SetPriceAggregator(address asset, address priceAggregator);
+    event SetPriceAggregator(string asset, address priceAggregator);
 }
