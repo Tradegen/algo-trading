@@ -13,17 +13,20 @@ contract TradingBotFactory is ITradingBotFactory {
     address public immutable candlestickDataFeedRegistry;
     address public immutable tradingBotRegistry;
     address public immutable keeperRegistry;
+    address public immutable tradingBotNFT;
 
-    constructor(address _componentsRegistry, address _candlestickDataFeedRegistry, address _tradingBotRegistry, address _keeperRegistry) {
+    constructor(address _componentsRegistry, address _candlestickDataFeedRegistry, address _tradingBotRegistry, address _keeperRegistry, address _tradingBotNFT) {
         require(_componentsRegistry != address(0), "TradingBotFactory: Invalid address for _componentsRegistry.");
         require(_candlestickDataFeedRegistry != address(0), "TradingBotFactory: Invalid address for _candlestickDataFeedRegistry.");
         require(_tradingBotRegistry != address(0), "TradingBotFactory: Invalid address for _tradingBotRegistry.");
         require(_keeperRegistry != address(0), "TradingBotFactory: Invalid address for _keeperRegistry.");
+        require(_tradingBotNFT != address(0), "TradingBotFactory: Invalid address for _tradingBotNFT.");
 
         componentsRegistry = _componentsRegistry;
         candlestickDataFeedRegistry = _candlestickDataFeedRegistry;
         tradingBotRegistry = _tradingBotRegistry;
         keeperRegistry = _keeperRegistry;
+        tradingBotNFT = _tradingBotNFT;
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
@@ -35,7 +38,7 @@ contract TradingBotFactory is ITradingBotFactory {
     * @return address Address of the deployed TradingBot contract.
     */
     function createTradingBot(address _owner) external override onlyTradingBotRegistry returns (address) {
-        address tradingBotContract = address(new TradingBot(_owner, componentsRegistry, candlestickDataFeedRegistry, tradingBotRegistry, keeperRegistry));
+        address tradingBotContract = address(new TradingBot(_owner, componentsRegistry, candlestickDataFeedRegistry, tradingBotRegistry, keeperRegistry, tradingBotNFT));
 
         emit CreatedTradingBot(_owner, tradingBotContract);
 

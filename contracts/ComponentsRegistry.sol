@@ -288,11 +288,13 @@ contract ComponentsRegistry is IComponentsRegistry, IComponent, Ownable {
         feeToken.safeTransferFrom(msg.sender, address(this), fee);
         feeToken.approve(instanceAddress, fee);
 
+        {
         (,, address firstIndicatorAddress,,,) = getComponentInfo(_firstIndicatorID);
         (,, address secondIndicatorAddress,,,) = getComponentInfo(_secondIndicatorID);
+        IComparator(contractAddress).createInstance(firstIndicatorAddress, secondIndicatorAddress, _firstIndicatorInstanceID, _secondIndicatorInstanceID);
+        }
 
         uint256 instanceID = IComponentInstances(instanceAddress).createInstance(msg.sender, _price, _isDefault);
-        IComparator(contractAddress).createInstance(firstIndicatorAddress, secondIndicatorAddress, _firstIndicatorInstanceID, _secondIndicatorInstanceID);
 
         emit CreatedComparatorInstance(_componentID, instanceID, msg.sender, _price, _isDefault, _firstIndicatorID, _secondIndicatorID, _firstIndicatorInstanceID, _secondIndicatorInstanceID);
     }

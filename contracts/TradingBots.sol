@@ -28,7 +28,7 @@ contract TradingBots is ITradingBots, ERC1155, Ownable {
     * @param _owner Address of the trading bot owner (the recipient of the NFT).
     * @param _tradingBot Address of the trading bot contract.
     */
-    function mintTradingBot(uint256 _tokenID, address _owner, address _tradingBot) external isInitialized onlyTradingBotRegistry {
+    function mintTradingBot(uint256 _tokenID, address _owner, address _tradingBot) external override isInitialized onlyTradingBotRegistry {
         // Create the NFT and transfer it to _owner.
         _mint(_owner, _tokenID, 1, "");
 

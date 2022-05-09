@@ -65,10 +65,9 @@ contract Up is IIndicator {
     /**
     * @notice Returns the value of this indicator for the given instance.
     * @dev Returns an empty array if the instance number is out of bounds.
-    * @param _instance Instance number of this indicator.
     * @return (uint256[] memory) Indicator value for the given instance.
     */
-    function getValue(uint256 _instance) external view override returns (uint256[] memory) {
+    function getValue(uint256) external pure override returns (uint256[] memory) {
         uint256[] memory result = new uint256[](1);
 
         result[0] = 1;
@@ -79,10 +78,9 @@ contract Up is IIndicator {
     /**
     * @notice Returns the history of this indicator for the given instance.
     * @dev Returns an empty array if the instance number is out of bounds.
-    * @param _instance Instance number of this indicator.
     * @return (uint256[] memory) Indicator value history for the given instance.
     */
-    function getHistory(uint256 _instance) external view override returns (uint256[] memory) {
+    function getHistory(uint256) external pure override returns (uint256[] memory) {
         uint256[] memory result = new uint256[](1);
 
         result[0] = 1;
