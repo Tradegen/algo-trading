@@ -33,7 +33,6 @@ describe("RiseByAtLeast", () => {
 
     CandlestickDataFeedRegistryFactory = await ethers.getContractFactory('TestCandlestickDataFeedRegistry');
     LatestPriceFactory = await ethers.getContractFactory('TestLatestPrice');
-    IntervalFactory = await ethers.getContractFactory('TestInterval');
     PreviousNPriceUpdatesFactory = await ethers.getContractFactory('TestPreviousNPriceUpdates');
     NPercentFactory = await ethers.getContractFactory('TestNPercent');
     ComparatorFactory = await ethers.getContractFactory('TestRiseByAtLeast');
@@ -47,10 +46,6 @@ describe("RiseByAtLeast", () => {
     latestPrice = await LatestPriceFactory.deploy(deployer.address, candlestickDataFeedRegistryAddress, deployer.address);
     await latestPrice.deployed();
     latestPriceAddress = latestPrice.address;
-
-    interval = await IntervalFactory.deploy(deployer.address, candlestickDataFeedRegistryAddress, deployer.address);
-    await interval.deployed();
-    intervalAddress = interval.address;
 
     previousNPriceUpdates = await PreviousNPriceUpdatesFactory.deploy(deployer.address, candlestickDataFeedRegistryAddress, deployer.address);
     await previousNPriceUpdates.deployed();
