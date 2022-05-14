@@ -1,7 +1,7 @@
 const { expect } = require("chai");
 const { parseEther } = require("@ethersproject/units");
-/*
-describe("FallByAtLeast", () => {
+
+describe("RiseByAtLeast", () => {
   let deployer;
   let otherUser;
 
@@ -36,7 +36,7 @@ describe("FallByAtLeast", () => {
     IntervalFactory = await ethers.getContractFactory('TestInterval');
     PreviousNPriceUpdatesFactory = await ethers.getContractFactory('TestPreviousNPriceUpdates');
     NPercentFactory = await ethers.getContractFactory('TestNPercent');
-    ComparatorFactory = await ethers.getContractFactory('TestFallByAtLeast');
+    ComparatorFactory = await ethers.getContractFactory('TestRiseByAtLeast');
 
     candlestickDataFeedRegistry = await CandlestickDataFeedRegistryFactory.deploy();
     await candlestickDataFeedRegistry.deployed();
@@ -239,7 +239,7 @@ describe("FallByAtLeast", () => {
         expect(state[4][0]).to.equal(parseEther("800"));
     });
 
-    it("One price history; multi update; rose in value", async () => {
+    it("One price history; multi update; fell in value", async () => {
         let tx = await nPercent.setKeeper(1, deployer.address);
         await tx.wait();
 
@@ -273,7 +273,7 @@ describe("FallByAtLeast", () => {
         let tx11 = await latestPrice.setLastUpdated(1, 0);
         await tx11.wait();
 
-        let tx12 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("1800"));
+        let tx12 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("100"));
         await tx12.wait();
 
         let tx13 = await latestPrice.update(1);
@@ -295,10 +295,10 @@ describe("FallByAtLeast", () => {
         expect(meetsConditions).to.be.false;
 
         let state = await comparator.getState(1);
-        expect(state[4][0]).to.equal(parseEther("1800"));
+        expect(state[4][0]).to.equal(parseEther("100"));
     });
 
-    it("One price history; multi update; fall in value but not enough", async () => {
+    it("One price history; multi update; rose in value but not enough", async () => {
         let tx = await nPercent.setKeeper(1, deployer.address);
         await tx.wait();
 
@@ -332,7 +332,7 @@ describe("FallByAtLeast", () => {
         let tx11 = await latestPrice.setLastUpdated(1, 0);
         await tx11.wait();
 
-        let tx12 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("750"));
+        let tx12 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("850"));
         await tx12.wait();
 
         let tx13 = await latestPrice.update(1);
@@ -354,7 +354,7 @@ describe("FallByAtLeast", () => {
         expect(meetsConditions).to.be.false;
 
         let state = await comparator.getState(1);
-        expect(state[4][0]).to.equal(parseEther("750"));
+        expect(state[4][0]).to.equal(parseEther("850"));
     });
 
     it("One price history; multi update; meets conditions", async () => {
@@ -391,7 +391,7 @@ describe("FallByAtLeast", () => {
         let tx11 = await latestPrice.setLastUpdated(1, 0);
         await tx11.wait();
 
-        let tx12 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("700"));
+        let tx12 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("900"));
         await tx12.wait();
 
         let tx13 = await latestPrice.update(1);
@@ -413,10 +413,10 @@ describe("FallByAtLeast", () => {
         expect(meetsConditions).to.be.true;
 
         let state = await comparator.getState(1);
-        expect(state[4][0]).to.equal(parseEther("700"));
+        expect(state[4][0]).to.equal(parseEther("900"));
     });
 
-    it("Multi price history; one update; rose in value", async () => {
+    it("Multi price history; one update; fell in value", async () => {
         let tx = await nPercent.setKeeper(1, deployer.address);
         await tx.wait();
 
@@ -453,7 +453,7 @@ describe("FallByAtLeast", () => {
         let tx12 = await previousNPriceUpdates.setLastUpdated(1, 0);
         await tx12.wait();
 
-        let tx13 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("1000"));
+        let tx13 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("700"));
         await tx13.wait();
 
         let tx14 = await previousNPriceUpdates.update(1);
@@ -478,7 +478,7 @@ describe("FallByAtLeast", () => {
         expect(state[4][0]).to.equal(parseEther("800"));
     });
 
-    it("Multi price history; one update; fall in value but not enough", async () => {
+    it("Multi price history; one update; rose in value but not enough", async () => {
         let tx = await nPercent.setKeeper(1, deployer.address);
         await tx.wait();
 
@@ -506,7 +506,7 @@ describe("FallByAtLeast", () => {
         let tx9 = await previousNPriceUpdates.setLastUpdated(1, 0);
         await tx9.wait();
 
-        let tx10 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("900"));
+        let tx10 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("1200"));
         await tx10.wait();
 
         let tx11 = await previousNPriceUpdates.update(1);
@@ -515,7 +515,7 @@ describe("FallByAtLeast", () => {
         let tx12 = await previousNPriceUpdates.setLastUpdated(1, 0);
         await tx12.wait();
 
-        let tx13 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("950"));
+        let tx13 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("1050"));
         await tx13.wait();
 
         let tx14 = await previousNPriceUpdates.update(1);
@@ -568,7 +568,7 @@ describe("FallByAtLeast", () => {
         let tx9 = await previousNPriceUpdates.setLastUpdated(1, 0);
         await tx9.wait();
 
-        let tx10 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("950"));
+        let tx10 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("1050"));
         await tx10.wait();
 
         let tx11 = await previousNPriceUpdates.update(1);
@@ -577,7 +577,7 @@ describe("FallByAtLeast", () => {
         let tx12 = await previousNPriceUpdates.setLastUpdated(1, 0);
         await tx12.wait();
 
-        let tx13 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("900"));
+        let tx13 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("1200"));
         await tx13.wait();
 
         let tx14 = await previousNPriceUpdates.update(1);
@@ -602,7 +602,7 @@ describe("FallByAtLeast", () => {
         expect(state[4][0]).to.equal(parseEther("1000"));
     });
 
-    it("Multi price history; multi update; meets conditions then rise in value", async () => {
+    it("Multi price history; multi update; meets conditions then fall in value", async () => {
         let tx = await nPercent.setKeeper(1, deployer.address);
         await tx.wait();
 
@@ -630,7 +630,7 @@ describe("FallByAtLeast", () => {
         let tx9 = await previousNPriceUpdates.setLastUpdated(1, 0);
         await tx9.wait();
 
-        let tx10 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("950"));
+        let tx10 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("1050"));
         await tx10.wait();
 
         let tx11 = await previousNPriceUpdates.update(1);
@@ -639,7 +639,7 @@ describe("FallByAtLeast", () => {
         let tx12 = await previousNPriceUpdates.setLastUpdated(1, 0);
         await tx12.wait();
 
-        let tx13 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("800"));
+        let tx13 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("1150"));
         await tx13.wait();
 
         let tx14 = await previousNPriceUpdates.update(1);
@@ -676,10 +676,10 @@ describe("FallByAtLeast", () => {
         expect(meetsConditions).to.be.false;
 
         let state = await comparator.getState(1);
-        expect(state[4][0]).to.equal(parseEther("950"));
+        expect(state[4][0]).to.equal(parseEther("1050"));
     });
 
-    it("Multi price history; multi update; meets conditions then falls but not enough", async () => {
+    it("Multi price history; multi update; meets conditions then rises but not enough", async () => {
         let tx = await nPercent.setKeeper(1, deployer.address);
         await tx.wait();
 
@@ -707,7 +707,7 @@ describe("FallByAtLeast", () => {
         let tx9 = await previousNPriceUpdates.setLastUpdated(1, 0);
         await tx9.wait();
 
-        let tx10 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("950"));
+        let tx10 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("1050"));
         await tx10.wait();
 
         let tx11 = await previousNPriceUpdates.update(1);
@@ -716,7 +716,7 @@ describe("FallByAtLeast", () => {
         let tx12 = await previousNPriceUpdates.setLastUpdated(1, 0);
         await tx12.wait();
 
-        let tx13 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("930"));
+        let tx13 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("1130"));
         await tx13.wait();
 
         let tx14 = await previousNPriceUpdates.update(1);
@@ -731,7 +731,7 @@ describe("FallByAtLeast", () => {
         let tx17 = await previousNPriceUpdates.setLastUpdated(1, 0);
         await tx17.wait();
 
-        let tx18 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("900"));
+        let tx18 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("1140"));
         await tx18.wait();
 
         let tx19 = await previousNPriceUpdates.update(1);
@@ -753,7 +753,7 @@ describe("FallByAtLeast", () => {
         expect(meetsConditions).to.be.false;
 
         let state = await comparator.getState(1);
-        expect(state[4][0]).to.equal(parseEther("950"));
+        expect(state[4][0]).to.equal(parseEther("1050"));
     });
 
     it("Multi price history; multi update; meets conditions then fails then meets again", async () => {
@@ -784,7 +784,7 @@ describe("FallByAtLeast", () => {
         let tx9 = await previousNPriceUpdates.setLastUpdated(1, 0);
         await tx9.wait();
 
-        let tx10 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("950"));
+        let tx10 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("1050"));
         await tx10.wait();
 
         let tx11 = await previousNPriceUpdates.update(1);
@@ -793,7 +793,7 @@ describe("FallByAtLeast", () => {
         let tx12 = await previousNPriceUpdates.setLastUpdated(1, 0);
         await tx12.wait();
 
-        let tx13 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("920"));
+        let tx13 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("1120"));
         await tx13.wait();
 
         let tx14 = await previousNPriceUpdates.update(1);
@@ -804,6 +804,9 @@ describe("FallByAtLeast", () => {
 
         let tx16 = await comparator.checkConditions(1);
         await tx16.wait();
+
+        let meetsConditions1 = await comparator.meetsConditions(1);
+        expect(meetsConditions1).to.be.true;
 
         let tx17 = await previousNPriceUpdates.setLastUpdated(1, 0);
         await tx17.wait();
@@ -820,7 +823,10 @@ describe("FallByAtLeast", () => {
         let tx21 = await comparator.checkConditions(1);
         await tx21.wait();
 
-        let tx22 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("650"));
+        let meetsConditions2 = await comparator.meetsConditions(1);
+        expect(meetsConditions2).to.be.false;
+
+        let tx22 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("1300"));
         await tx22.wait();
 
         let tx23 = await previousNPriceUpdates.setLastUpdated(1, 0);
@@ -841,11 +847,11 @@ describe("FallByAtLeast", () => {
         let canUpdate = await comparator.canUpdate(1);
         expect(canUpdate).to.be.false;
 
-        let meetsConditions = await comparator.meetsConditions(1);
-        expect(meetsConditions).to.be.true;
+        let meetsConditions3 = await comparator.meetsConditions(1);
+        expect(meetsConditions3).to.be.true;
 
         let state = await comparator.getState(1);
-        expect(state[4][0]).to.equal(parseEther("920"));
+        expect(state[4][0]).to.equal(parseEther("1120"));
     });
   });
-});*/
+});

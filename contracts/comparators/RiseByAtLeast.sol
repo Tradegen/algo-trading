@@ -134,7 +134,7 @@ contract RiseByAtLeast is IComparator {
             secondIndicatorAddress: _secondIndicatorAddress,
             firstIndicatorInstance: _firstIndicatorInstance,
             secondIndicatorInstance: _secondIndicatorInstance,
-            variables: new uint256[](0)
+            variables: new uint256[](1)
         });
 
         emit CreatedInstance(numberOfInstances, timeframe, _firstIndicatorAddress, _secondIndicatorAddress, _firstIndicatorInstance, _secondIndicatorInstance);
@@ -159,21 +159,29 @@ contract RiseByAtLeast is IComparator {
         uint256[] memory firstIndicatorValues = IIndicator(instance.firstIndicatorAddress).getValue(instance.firstIndicatorInstance);
         uint256[] memory secondIndicatorValue = IIndicator(instance.secondIndicatorAddress).getValue(instance.secondIndicatorInstance);
 
-        if (firstIndicatorValues.length < 2) {
-            meetsConditions[_instance] = false;
-            emit CheckedConditions(_instance);
-            return true;
+        if (firstIndicatorValues.length > 1) {
+            // Check if indicator fell in value.
+            if (firstIndicatorValues[firstIndicatorValues.length - 1] <= firstIndicatorValues[0]) {
+                meetsConditions[_instance] = false;
+            }
+            else {
+                meetsConditions[_instance] = ((firstIndicatorValues[firstIndicatorValues.length - 1].sub(firstIndicatorValues[0]).mul(10000).div(firstIndicatorValues[0])) >= secondIndicatorValue[0]);
+            }
+        }
+        else {
+            // Check if indicator fell in value.
+            if (firstIndicatorValues[firstIndicatorValues.length - 1] <= instance.variables[0] || instance.variables[0] == 0) {
+                meetsConditions[_instance] = false;
+            }
+            else {
+                meetsConditions[_instance] = ((firstIndicatorValues[firstIndicatorValues.length - 1].sub(instance.variables[0]).mul(10000).div(instance.variables[0])) >= secondIndicatorValue[0]);
+            }
         }
 
-        // Check if indicator fell in value.
-        if (firstIndicatorValues[firstIndicatorValues.length - 1] <= firstIndicatorValues[0]) {
-            meetsConditions[_instance] = false;
-            emit CheckedConditions(_instance);
-            return true;
-        }
+        instances[_instance].variables[0] = firstIndicatorValues[0];
 
-        meetsConditions[_instance] = ((firstIndicatorValues[firstIndicatorValues.length - 1].sub(firstIndicatorValues[0]).mul(1e18).mul(100).div(firstIndicatorValues[0])) >= secondIndicatorValue[0]);
         emit CheckedConditions(_instance);
+
         return true;
     }
 
