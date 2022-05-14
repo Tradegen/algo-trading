@@ -159,23 +159,29 @@ contract FallByAtLeast is IComparator {
         uint256[] memory firstIndicatorValues = IIndicator(instance.firstIndicatorAddress).getValue(instance.firstIndicatorInstance);
         uint256[] memory secondIndicatorValue = IIndicator(instance.secondIndicatorAddress).getValue(instance.secondIndicatorInstance);
 
-        // Check if indicator rose in value.
-        if (firstIndicatorValues[firstIndicatorValues.length - 1] >= firstIndicatorValues[0]) {
-            meetsConditions[_instance] = false;
-            emit CheckedConditions(_instance);
-            return true;
-        }
-
         if (firstIndicatorValues.length > 1) {
-            meetsConditions[_instance] = ((firstIndicatorValues[0].sub(firstIndicatorValues[firstIndicatorValues.length - 1]).mul(10000).div(firstIndicatorValues[0])) >= secondIndicatorValue[0]);
+            // Check if indicator rose in value.
+            if (firstIndicatorValues[firstIndicatorValues.length - 1] >= firstIndicatorValues[0]) {
+                meetsConditions[_instance] = false;
+            }
+            else {
+                meetsConditions[_instance] = ((firstIndicatorValues[0].sub(firstIndicatorValues[firstIndicatorValues.length - 1]).mul(10000).div(firstIndicatorValues[0])) >= secondIndicatorValue[0]);
+            }
         }
         else {
-            meetsConditions[_instance] = ((instance.variables[0].sub(firstIndicatorValues[firstIndicatorValues.length - 1]).mul(10000).div(instance.variables[0])) >= secondIndicatorValue[0]);
+            // Check if indicator rose in value.
+            if (firstIndicatorValues[firstIndicatorValues.length - 1] >= instance.variables[0]) {
+                meetsConditions[_instance] = false;
+            }
+            else {
+                meetsConditions[_instance] = ((instance.variables[0].sub(firstIndicatorValues[firstIndicatorValues.length - 1]).mul(10000).div(instance.variables[0])) >= secondIndicatorValue[0]);
+            }
         }
 
         instances[_instance].variables[0] = firstIndicatorValues[0];
 
         emit CheckedConditions(_instance);
+        
         return true;
     }
 

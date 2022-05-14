@@ -291,6 +291,10 @@ contract ComponentsRegistry is IComponentsRegistry, IComponent, Ownable {
         {
         (,, address firstIndicatorAddress,,,) = getComponentInfo(_firstIndicatorID);
         (,, address secondIndicatorAddress,,,) = getComponentInfo(_secondIndicatorID);
+
+        require(IIndicator(firstIndicatorAddress).isActive(_firstIndicatorID), "ComponentsRegistry: First indicator is not active.");
+        require(IIndicator(secondIndicatorAddress).isActive(_secondIndicatorID), "ComponentsRegistry: Second indicator is not active.");
+        
         IComparator(contractAddress).createInstance(firstIndicatorAddress, secondIndicatorAddress, _firstIndicatorInstanceID, _secondIndicatorInstanceID);
         }
 
