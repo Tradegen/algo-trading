@@ -69,10 +69,10 @@ contract PreviousNPriceUpdates is IIndicator {
     * @return (uint256[] memory) Indicator value for the given instance.
     */
     function getValue(uint256 _instance) external view override returns (uint256[] memory) {
-        uint256[] memory result = new uint256[]((instances[_instance].history.length >= instances[_instance].params[0]) ? instances[_instance].history.length : 0);
-
         uint256 N = instances[_instance].params[0];
-        uint256 historyLength = (instances[_instance].history.length >= MAX_HISTORY_LENGTH) ? MAX_HISTORY_LENGTH : instances[_instance].history.length;
+        uint256 historyLength = instances[_instance].history.length;
+        uint256[] memory result = new uint256[]((historyLength >= instances[_instance].params[0]) ? instances[_instance].params[0] : 0);
+        
         for (uint256 i = 0; i < result.length; i++) {
             result[i] = instances[_instance].history[historyLength.sub(N).add(i)];
         }
@@ -87,12 +87,12 @@ contract PreviousNPriceUpdates is IIndicator {
     * @return (uint256[] memory) Indicator value history for the given instance.
     */
     function getHistory(uint256 _instance) external view override returns (uint256[] memory) {
-        // Gas savings.
-        State memory state = instances[_instance];
-        uint256[] memory history = new uint256[](state.history.length >= MAX_HISTORY_LENGTH ? MAX_HISTORY_LENGTH : state.history.length);
+        uint256 historyLength = instances[_instance].history.length;
+        uint256 length = historyLength >= MAX_HISTORY_LENGTH ? MAX_HISTORY_LENGTH : historyLength;
+        uint256[] memory history = new uint256[](length);
 
-        for (uint256 i = 0; i < history.length; i++) {
-            history[i] = instances[_instance].history[i];
+        for (uint256 i = 0; i < length; i++) {
+            history[i] = instances[_instance].history[historyLength.sub(length).add(i)];
         }
 
 
@@ -170,7 +170,7 @@ contract PreviousNPriceUpdates is IIndicator {
                             uint256 _indicatorTimeframe,
                             uint256[] memory _params) external override onlyComponentRegistry returns (uint256) {
         require(_params.length >= 1, "Indicator: Not enough params.");
-        require(_params[0] > 1 && _params[1] <= 20, "Indicator: Param out of bounds.");
+        require(_params[0] >= 1 && _params[0] <= 20, "Indicator: Param out of bounds.");
 
         // Gas savings.
         uint256 instanceNumber = numberOfInstances.add(1);

@@ -125,6 +125,8 @@ contract FallByAtLeast is IComparator {
         uint256 indicatorTimeframe2 = IIndicator(_secondIndicatorAddress).indicatorTimeframe(_secondIndicatorInstance);
         uint256 timeframe = (indicatorTimeframe1 < indicatorTimeframe2) ? indicatorTimeframe1 : indicatorTimeframe2;
 
+        require(timeframe > 0, "Comparator: Invalid timeframe.");
+
         numberOfInstances = numberOfInstances.add(1);
         comparatorTimeframe[numberOfInstances] = timeframe;
         instances[numberOfInstances] = State({
@@ -132,7 +134,7 @@ contract FallByAtLeast is IComparator {
             secondIndicatorAddress: _secondIndicatorAddress,
             firstIndicatorInstance: _firstIndicatorInstance,
             secondIndicatorInstance: _secondIndicatorInstance,
-            variables: new uint256[](0)
+            variables: new uint256[](1)
         });
 
         emit CreatedInstance(numberOfInstances, timeframe, _firstIndicatorAddress, _secondIndicatorAddress, _firstIndicatorInstance, _secondIndicatorInstance);
@@ -157,12 +159,6 @@ contract FallByAtLeast is IComparator {
         uint256[] memory firstIndicatorValues = IIndicator(instance.firstIndicatorAddress).getValue(instance.firstIndicatorInstance);
         uint256[] memory secondIndicatorValue = IIndicator(instance.secondIndicatorAddress).getValue(instance.secondIndicatorInstance);
 
-        if (firstIndicatorValues.length < 2) {
-            meetsConditions[_instance] = false;
-            emit CheckedConditions(_instance);
-            return true;
-        }
-
         // Check if indicator rose in value.
         if (firstIndicatorValues[firstIndicatorValues.length - 1] >= firstIndicatorValues[0]) {
             meetsConditions[_instance] = false;
@@ -170,7 +166,15 @@ contract FallByAtLeast is IComparator {
             return true;
         }
 
-        meetsConditions[_instance] = ((firstIndicatorValues[0].sub(firstIndicatorValues[firstIndicatorValues.length - 1]).mul(1e18).mul(100).div(firstIndicatorValues[0])) >= secondIndicatorValue[0]);
+        if (firstIndicatorValues.length > 1) {
+            meetsConditions[_instance] = ((firstIndicatorValues[0].sub(firstIndicatorValues[firstIndicatorValues.length - 1]).mul(10000).div(firstIndicatorValues[0])) >= secondIndicatorValue[0]);
+        }
+        else {
+            meetsConditions[_instance] = ((instance.variables[0].sub(firstIndicatorValues[firstIndicatorValues.length - 1]).mul(10000).div(instance.variables[0])) >= secondIndicatorValue[0]);
+        }
+
+        instances[_instance].variables[0] = firstIndicatorValues[0];
+
         emit CheckedConditions(_instance);
         return true;
     }

@@ -125,6 +125,8 @@ contract Closes is IComparator {
         uint256 indicatorTimeframe2 = IIndicator(_secondIndicatorAddress).indicatorTimeframe(_secondIndicatorInstance);
         uint256 timeframe = (indicatorTimeframe1 < indicatorTimeframe2) ? indicatorTimeframe1 : indicatorTimeframe2;
 
+        require(timeframe > 0, "Comparator: Invalid timeframe.");
+
         numberOfInstances = numberOfInstances.add(1);
         comparatorTimeframe[numberOfInstances] = timeframe;
         instances[numberOfInstances] = State({
@@ -163,13 +165,13 @@ contract Closes is IComparator {
             }
 
             if (priceHistory.length > 1) {
+                meetsConditions[_instance] = true;
+
                 for (uint256 i = 1; i < priceHistory.length; i++) {
                     if (priceHistory[i] <= priceHistory[i - 1]) {
                         meetsConditions[_instance] = false;
                     }
                 }
-
-                meetsConditions[_instance] = true;
             }
             else {
                 bool result = (priceHistory[0] > instance.variables[0]);
@@ -186,13 +188,13 @@ contract Closes is IComparator {
             }
 
             if (priceHistory.length > 1) {
+                meetsConditions[_instance] = true;
+
                 for (uint256 i = 1; i < priceHistory.length; i++) {
                     if (priceHistory[i] >= priceHistory[i - 1]) {
                         meetsConditions[_instance] = false;
                     }
                 }
-
-                meetsConditions[_instance] = true;
             }
             else {
                 bool result = (priceHistory[0] < instance.variables[0]);

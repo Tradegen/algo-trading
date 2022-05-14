@@ -83,12 +83,12 @@ contract HighOfLastNPriceUpdates is IIndicator {
     * @return (uint256[] memory) Indicator value history for the given instance.
     */
     function getHistory(uint256 _instance) external view override returns (uint256[] memory) {
-        // Gas savings.
-        State memory state = instances[_instance];
-        uint256[] memory history = new uint256[](state.history.length >= MAX_HISTORY_LENGTH ? MAX_HISTORY_LENGTH : state.history.length);
+        uint256 historyLength = instances[_instance].history.length;
+        uint256 length = historyLength >= MAX_HISTORY_LENGTH ? MAX_HISTORY_LENGTH : historyLength;
+        uint256[] memory history = new uint256[](length);
 
-        for (uint256 i = 0; i < history.length; i++) {
-            history[i] = instances[_instance].history[i];
+        for (uint256 i = 0; i < length; i++) {
+            history[i] = instances[_instance].history[historyLength.sub(length).add(i)];
         }
 
 
@@ -166,7 +166,7 @@ contract HighOfLastNPriceUpdates is IIndicator {
                             uint256 _indicatorTimeframe,
                             uint256[] memory _params) external override onlyComponentRegistry returns (uint256) {
         require(_params.length >= 1, "Indicator: Not enough params.");
-        require(_params[0] > 1 && _params[1] <= 200, "Indicator: Param out of bounds.");
+        require(_params[0] > 1 && _params[0] <= 20, "Indicator: Param out of bounds.");
 
         // Gas savings.
         uint256 instanceNumber = numberOfInstances.add(1);
@@ -204,13 +204,14 @@ contract HighOfLastNPriceUpdates is IIndicator {
             return false;
         }
 
-        uint256 length = (data.history.length >= data.params[0]) ? data.params[0] : 0;
-        uint256 high;
-
         instances[_instance].history.push(latestHighPrice);
 
+        uint256 historyLength = instances[_instance].history.length;
+        uint256 length = (historyLength >= data.params[0]) ? data.params[0] : historyLength;
+        uint256 high;
+
         for (uint256 i = 0; i < length; i++) {
-            high = (data.history[length - i - 1] > high) ? data.history[length - i - 1] : high;
+            high = (instances[_instance].history[historyLength - i - 1] > high) ? instances[_instance].history[historyLength - i - 1] : high;
         }
 
         instances[_instance].value = high;

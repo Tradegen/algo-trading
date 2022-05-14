@@ -26,7 +26,6 @@ contract EMA is IIndicator {
     ICandlestickDataFeedRegistry public immutable candlestickDataFeedRegistry;
 
     uint256 public constant multiplierNumerator = 2;
-    uint256 public multiplierDenominator;
 
     // Keep track of total number of instances.
     // This ensures instance IDs are unique.
@@ -87,12 +86,12 @@ contract EMA is IIndicator {
     * @return (uint256[] memory) Indicator value history for the given instance.
     */
     function getHistory(uint256 _instance) external view override returns (uint256[] memory) {
-        // Gas savings.
-        State memory state = instances[_instance];
-        uint256[] memory history = new uint256[](state.history.length >= MAX_HISTORY_LENGTH ? MAX_HISTORY_LENGTH : state.history.length);
+        uint256 historyLength = instances[_instance].history.length;
+        uint256 length = historyLength >= MAX_HISTORY_LENGTH ? MAX_HISTORY_LENGTH : historyLength;
+        uint256[] memory history = new uint256[](length);
 
-        for (uint256 i = 0; i < history.length; i++) {
-            history[i] = instances[_instance].history[i];
+        for (uint256 i = 0; i < length; i++) {
+            history[i] = instances[_instance].history[historyLength.sub(length).add(i)];
         }
 
 
@@ -170,12 +169,11 @@ contract EMA is IIndicator {
                             uint256 _indicatorTimeframe,
                             uint256[] memory _params) external override onlyComponentRegistry returns (uint256) {
         require(_params.length >= 1, "Indicator: Not enough params.");
-        require(_params[0] > 1 && _params[1] <= 200, "Indicator: Param out of bounds.");
+        require(_params[0] > 1 && _params[0] <= 200, "Indicator: Param out of bounds.");
 
         // Gas savings.
         uint256 instanceNumber = numberOfInstances.add(1);
 
-        multiplierDenominator = _params[0].add(1);
         indicatorTimeframe[instanceNumber] = _indicatorTimeframe;
         numberOfInstances = instanceNumber;
         instances[instanceNumber] = State({
@@ -183,9 +181,10 @@ contract EMA is IIndicator {
             assetTimeframe: _assetTimeframe,
             value: 0,
             params: _params,
-            variables: new uint256[](1),
+            variables: new uint256[](2),
             history: new uint256[](0)
         });
+        instances[instanceNumber].variables[1] = _params[0].add(1);
 
         emit CreatedInstance(instanceNumber, _asset, _assetTimeframe, _indicatorTimeframe, _params);
 
@@ -212,11 +211,11 @@ contract EMA is IIndicator {
         uint256 currentValue = data.value;
         uint256 newValue = (currentValue == 0) ? latestPrice :
                                     (latestPrice >= data.variables[0]) ?
-                                    (multiplierNumerator.mul(latestPrice.sub(data.variables[0])).div(multiplierDenominator)).add(data.variables[0]) :
-                                    data.variables[0].sub(multiplierNumerator.mul(data.variables[0].sub(latestPrice)).div(multiplierDenominator));
+                                    (multiplierNumerator.mul(latestPrice.sub(data.variables[0])).div(data.variables[1])).add(data.variables[0]) :
+                                    data.variables[0].sub(multiplierNumerator.mul(data.variables[0].sub(latestPrice)).div(data.variables[1]));
 
         instances[_instance].value = newValue;
-        instances[_instance].variables[0] = currentValue;
+        instances[_instance].variables[0] = (currentValue == 0) ? latestPrice : currentValue;
         instances[_instance].history.push(newValue);
         lastUpdated[_instance] = block.timestamp;
 

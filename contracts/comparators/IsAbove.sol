@@ -125,6 +125,8 @@ contract IsAbove is IComparator {
         uint256 indicatorTimeframe2 = IIndicator(_secondIndicatorAddress).indicatorTimeframe(_secondIndicatorInstance);
         uint256 timeframe = (indicatorTimeframe1 < indicatorTimeframe2) ? indicatorTimeframe1 : indicatorTimeframe2;
 
+        require(timeframe > 0, "Comparator: Invalid timeframe.");
+
         numberOfInstances = numberOfInstances.add(1);
         comparatorTimeframe[numberOfInstances] = timeframe;
         instances[numberOfInstances] = State({

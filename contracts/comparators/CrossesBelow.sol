@@ -125,6 +125,8 @@ contract CrossesBelow is IComparator {
         uint256 indicatorTimeframe2 = IIndicator(_secondIndicatorAddress).indicatorTimeframe(_secondIndicatorInstance);
         uint256 timeframe = (indicatorTimeframe1 < indicatorTimeframe2) ? indicatorTimeframe1 : indicatorTimeframe2;
 
+        require(timeframe > 0, "Comparator: Invalid timeframe.");
+
         numberOfInstances = numberOfInstances.add(1);
         comparatorTimeframe[numberOfInstances] = timeframe;
         instances[numberOfInstances] = State({
@@ -157,7 +159,7 @@ contract CrossesBelow is IComparator {
         uint256[] memory firstIndicatorValue = IIndicator(instance.firstIndicatorAddress).getValue(instance.firstIndicatorInstance);
         uint256[] memory secondIndicatorValue = IIndicator(instance.secondIndicatorAddress).getValue(instance.secondIndicatorInstance);
 
-        if (firstIndicatorValue.length == 0 || secondIndicatorValue.length == 0 || instance.variables[0] == 0 || instance.variables[1] == 0) {
+        if (firstIndicatorValue.length == 0 || secondIndicatorValue.length == 0) {
             meetsConditions[_instance] = false;
             emit CheckedConditions(_instance);
             return true;

@@ -1,7 +1,7 @@
 const { expect } = require("chai");
 const { parseEther } = require("@ethersproject/units");
 /*
-describe("Down", () => {
+describe("Up", () => {
   let deployer;
   let otherUser;
 
@@ -20,7 +20,7 @@ describe("Down", () => {
     otherUser = signers[1];
 
     CandlestickDataFeedRegistryFactory = await ethers.getContractFactory('TestCandlestickDataFeedRegistry');
-    IndicatorFactory = await ethers.getContractFactory('Down');
+    IndicatorFactory = await ethers.getContractFactory('Up');
 
     candlestickDataFeedRegistry = await CandlestickDataFeedRegistryFactory.deploy();
     await candlestickDataFeedRegistry.deployed();
@@ -60,11 +60,11 @@ describe("Down", () => {
 
         let value = await indicator.getValue(1);
         expect(value.length).to.equal(1);
-        expect(value[0]).to.equal(0);
+        expect(value[0]).to.equal(1);
 
         let history = await indicator.getHistory(1);
         expect(history.length).to.equal(1);
-        expect(history[0]).to.equal(0);
+        expect(history[0]).to.equal(1);
 
         let indicatorTimeframe = await indicator.indicatorTimeframe(1);
         expect(indicatorTimeframe).to.equal(1);
@@ -78,7 +78,7 @@ describe("Down", () => {
         let state = await indicator.getState(1);
         expect(state[0]).to.equal("BTC");
         expect(state[1]).to.equal(1);
-        expect(state[2]).to.equal(0);
+        expect(state[2]).to.equal(1);
         expect(state[3].length).to.equal(0);
         expect(state[4].length).to.equal(0);
         expect(state[5].length).to.equal(0);
@@ -123,39 +123,39 @@ describe("Down", () => {
 
         let history = await indicator.getHistory(1);
         expect(history.length).to.equal(1);
-        expect(history[0]).to.equal(0);
+        expect(history[0]).to.equal(1);
     });
 
     it("multiple instances", async () => {
-      let tx = await indicator.setKeeper(1, deployer.address);
-      await tx.wait();
-
-      let tx2 = await indicator.setKeeper(2, deployer.address);
-      await tx2.wait();
-
-      let tx3 = await indicator.createInstance("BTC", 1, 1, []);
-      await tx3.wait();
-
-      let tx4 = await indicator.createInstance("ETH", 5, 5, []);
-      await tx4.wait();
-
-      let tx5 = await indicator.update(1);
-      await tx5.wait();
-
-      let isActive = await indicator.isActive(2);
-      expect(isActive).to.be.false;
-
-      let canUpdate = await indicator.canUpdate(2);
-      expect(canUpdate).to.be.true;
-
-      let tx6 = await indicator.update(2);
-      await tx6.wait();
-
-      let isActive2 = await indicator.isActive(2);
-      expect(isActive2).to.be.true;
-
-      let canUpdate2 = await indicator.canUpdate(2);
-      expect(canUpdate2).to.be.false;
+        let tx = await indicator.setKeeper(1, deployer.address);
+        await tx.wait();
+  
+        let tx2 = await indicator.setKeeper(2, deployer.address);
+        await tx2.wait();
+  
+        let tx3 = await indicator.createInstance("BTC", 1, 1, []);
+        await tx3.wait();
+  
+        let tx4 = await indicator.createInstance("ETH", 5, 5, []);
+        await tx4.wait();
+  
+        let tx5 = await indicator.update(1);
+        await tx5.wait();
+  
+        let isActive = await indicator.isActive(2);
+        expect(isActive).to.be.false;
+  
+        let canUpdate = await indicator.canUpdate(2);
+        expect(canUpdate).to.be.true;
+  
+        let tx6 = await indicator.update(2);
+        await tx6.wait();
+  
+        let isActive2 = await indicator.isActive(2);
+        expect(isActive2).to.be.true;
+  
+        let canUpdate2 = await indicator.canUpdate(2);
+        expect(canUpdate2).to.be.false;
     });
 
     it("not ready to update", async () => {
@@ -173,7 +173,7 @@ describe("Down", () => {
 
       let history = await indicator.getHistory(1);
       expect(history.length).to.equal(1);
-      expect(history[0]).to.equal(0);
+      expect(history[0]).to.equal(1);
     });
   });
 });*/

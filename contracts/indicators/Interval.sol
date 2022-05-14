@@ -83,12 +83,12 @@ contract Interval is IIndicator {
     * @return (uint256[] memory) Indicator value history for the given instance.
     */
     function getHistory(uint256 _instance) external view override returns (uint256[] memory) {
-        // Gas savings.
-        State memory state = instances[_instance];
-        uint256[] memory history = new uint256[](state.history.length >= MAX_HISTORY_LENGTH ? MAX_HISTORY_LENGTH : state.history.length);
+        uint256 historyLength = instances[_instance].history.length;
+        uint256 length = historyLength >= MAX_HISTORY_LENGTH ? MAX_HISTORY_LENGTH : historyLength;
+        uint256[] memory history = new uint256[](length);
 
-        for (uint256 i = 0; i < history.length; i++) {
-            history[i] = instances[_instance].history[i];
+        for (uint256 i = 0; i < length; i++) {
+            history[i] = instances[_instance].history[historyLength.sub(length).add(i)];
         }
 
 
@@ -165,8 +165,9 @@ contract Interval is IIndicator {
                             uint256 _assetTimeframe,
                             uint256 _indicatorTimeframe,
                             uint256[] memory _params) external override onlyComponentRegistry returns (uint256) {
-        require(_params.length >= 1, "Indicator: Not enough params.");
-        require(_params[0] > 1 && _params[1] <= 200, "Indicator: Param out of bounds.");
+        require(_params.length >= 2, "Indicator: Not enough params.");
+        require(_params[0] >= 1e15 && _params[0] <= 1e22, "Indicator: First param out of bounds.");
+        require(_params[1] == 0 || _params[1] == 1, "Indicator: Second param out of bounds.");
 
         // Gas savings.
         uint256 instanceNumber = numberOfInstances.add(1);
@@ -176,7 +177,7 @@ contract Interval is IIndicator {
         instances[instanceNumber] = State({
             asset: _asset,
             assetTimeframe: _assetTimeframe,
-            value: _params[0],
+            value: 0,
             params: _params,
             variables: new uint256[](0),
             history: new uint256[](0)
@@ -195,9 +196,20 @@ contract Interval is IIndicator {
     */
     function update(uint256 _instance) external override onlyDedicatedKeeper(_instance) returns (bool) {
         require(canUpdate(_instance), "Indicator: Cannot update yet.");
+
+        State memory data = instances[_instance];
+        uint256 latestPrice = candlestickDataFeedRegistry.getCurrentPrice(data.asset, data.assetTimeframe);
+
+        // Return early if there was an error getting the latest price.
+        if (latestPrice == 0) {
+            return false;
+        }
         
-        instances[_instance].history.push(instances[_instance].value);
+        // Round the latest price to the nearest interval.
+        uint256 roundDown = latestPrice.div(data.params[0]).mul(data.params[0]);
+        instances[_instance].value = (data.params[1] == 1) ? roundDown : roundDown.add(data.params[0]);
         lastUpdated[_instance] = block.timestamp;
+        instances[_instance].history.push(instances[_instance].value);
         
         emit Updated(_instance, 0, instances[_instance].value);
 
