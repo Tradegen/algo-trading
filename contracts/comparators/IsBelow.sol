@@ -156,17 +156,27 @@ contract IsBelow is IComparator {
         lastUpdated[_instance] = block.timestamp;
 
         State memory instance = instances[_instance];
-        uint256[] memory firstIndicatorValue = IIndicator(instance.firstIndicatorAddress).getValue(instance.firstIndicatorInstance);
+        uint256[] memory firstIndicatorValues = IIndicator(instance.firstIndicatorAddress).getValue(instance.firstIndicatorInstance);
         uint256[] memory secondIndicatorValue = IIndicator(instance.secondIndicatorAddress).getValue(instance.secondIndicatorInstance);
 
-        if (firstIndicatorValue.length == 0 || secondIndicatorValue.length == 0) {
-            meetsConditions[_instance] = false;
-            emit CheckedConditions(_instance);
-            return true;
-        }
+        // If there is more than one value for first indicator, make sure each value meets conditions.
+        if (firstIndicatorValues.length > 1) {
+            meetsConditions[_instance] = true;
 
-        meetsConditions[_instance] = (firstIndicatorValue[firstIndicatorValue.length - 1] < secondIndicatorValue[secondIndicatorValue.length - 1]);
+            // Check if first indicator is above second indicator.
+            for (uint256 i = 1; i < firstIndicatorValues.length; i++) {
+                if (firstIndicatorValues[i - 1] >= secondIndicatorValue[0]) {
+                    meetsConditions[_instance] = false;
+                    break;
+                }
+            }
+        }
+        else {
+            meetsConditions[_instance] = (firstIndicatorValues[0] < secondIndicatorValue[0]);
+        }  
+
         emit CheckedConditions(_instance);
+
         return true;
     }
 

@@ -1,7 +1,7 @@
 const { expect } = require("chai");
 const { parseEther } = require("@ethersproject/units");
-/*
-describe("IsAbove", () => {
+
+describe("IsBelow", () => {
   let deployer;
   let otherUser;
 
@@ -35,7 +35,7 @@ describe("IsAbove", () => {
     LatestPriceFactory = await ethers.getContractFactory('TestLatestPrice');
     IntervalFactory = await ethers.getContractFactory('TestInterval');
     PreviousNPriceUpdatesFactory = await ethers.getContractFactory('TestPreviousNPriceUpdates');
-    ComparatorFactory = await ethers.getContractFactory('TestIsAbove');
+    ComparatorFactory = await ethers.getContractFactory('TestIsBelow');
 
     candlestickDataFeedRegistry = await CandlestickDataFeedRegistryFactory.deploy();
     await candlestickDataFeedRegistry.deployed();
@@ -186,7 +186,7 @@ describe("IsAbove", () => {
         let tx = await interval.setKeeper(1, deployer.address);
         await tx.wait();
 
-        let tx2 = await interval.createInstance("BTC", 1, 1, [parseEther("1000"), 0]);
+        let tx2 = await interval.createInstance("BTC", 1, 1, [parseEther("1000"), 1]);
         await tx2.wait();
 
         let tx3 = await latestPrice.setKeeper(1, deployer.address);
@@ -195,7 +195,7 @@ describe("IsAbove", () => {
         let tx4 = await latestPrice.createInstance("BTC", 1, 1, []);
         await tx4.wait();
 
-        let tx5 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("800"));
+        let tx5 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("1800"));
         await tx5.wait();
 
         let tx6 = await comparator.createInstance(latestPriceAddress, intervalAddress, 1, 1);
@@ -235,7 +235,7 @@ describe("IsAbove", () => {
         let tx = await interval.setKeeper(1, deployer.address);
         await tx.wait();
 
-        let tx2 = await interval.createInstance("BTC", 1, 1, [parseEther("1000"), 1]);
+        let tx2 = await interval.createInstance("BTC", 1, 1, [parseEther("1000"), 0]);
         await tx2.wait();
 
         let tx3 = await latestPrice.setKeeper(1, deployer.address);
@@ -284,7 +284,7 @@ describe("IsAbove", () => {
         let tx = await interval.setKeeper(1, deployer.address);
         await tx.wait();
 
-        let tx2 = await interval.createInstance("BTC", 1, 1, [parseEther("1000"), 0]);
+        let tx2 = await interval.createInstance("BTC", 1, 1, [parseEther("1000"), 1]);
         await tx2.wait();
 
         let tx3 = await latestPrice.setKeeper(1, deployer.address);
@@ -293,7 +293,7 @@ describe("IsAbove", () => {
         let tx4 = await latestPrice.createInstance("BTC", 1, 1, []);
         await tx4.wait();
 
-        let tx5 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("800"));
+        let tx5 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("1800"));
         await tx5.wait();
 
         let tx6 = await comparator.createInstance(latestPriceAddress, intervalAddress, 1, 1);
@@ -314,7 +314,7 @@ describe("IsAbove", () => {
         let tx11 = await latestPrice.setLastUpdated(1, 0);
         await tx11.wait();
 
-        let tx12 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("900"));
+        let tx12 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("1900"));
         await tx12.wait();
 
         let tx13 = await latestPrice.update(1);
@@ -337,124 +337,6 @@ describe("IsAbove", () => {
     });
 
     it("Multi price history; one update; each value fails conditions", async () => {
-        let tx = await interval.setKeeper(1, deployer.address);
-        await tx.wait();
-
-        let tx2 = await interval.createInstance("BTC", 1, 1, [parseEther("1000"), 0]);
-        await tx2.wait();
-
-        let tx3 = await previousNPriceUpdates.setKeeper(1, deployer.address);
-        await tx3.wait();
-
-        let tx4 = await previousNPriceUpdates.createInstance("BTC", 1, 1, [3]);
-        await tx4.wait();
-
-        let tx5 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("800"));
-        await tx5.wait();
-
-        let tx6 = await comparator.createInstance(previousNPriceUpdatesAddress, intervalAddress, 1, 1);
-        await tx6.wait();
-
-        let tx7 = await interval.update(1);
-        await tx7.wait();
-
-        let tx8 = await previousNPriceUpdates.update(1);
-        await tx8.wait();
-
-        let tx9 = await previousNPriceUpdates.setLastUpdated(1, 0);
-        await tx9.wait();
-
-        let tx10 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("900"));
-        await tx10.wait();
-
-        let tx11 = await previousNPriceUpdates.update(1);
-        await tx11.wait();
-
-        let tx12 = await previousNPriceUpdates.setLastUpdated(1, 0);
-        await tx12.wait();
-
-        let tx13 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("950"));
-        await tx13.wait();
-
-        let tx14 = await previousNPriceUpdates.update(1);
-        await tx14.wait();
-
-        let tx15 = await comparator.setKeeper(1, deployer.address);
-        await tx15.wait();
-
-        let tx16 = await comparator.checkConditions(1);
-        await tx16.wait();
-
-        let isActive = await comparator.isActive(1);
-        expect(isActive).to.be.true;
-
-        let canUpdate = await comparator.canUpdate(1);
-        expect(canUpdate).to.be.false;
-
-        let meetsConditions = await comparator.meetsConditions(1);
-        expect(meetsConditions).to.be.false;
-    });
-
-    it("Multi price history; one update; one value fails conditions", async () => {
-        let tx = await interval.setKeeper(1, deployer.address);
-        await tx.wait();
-
-        let tx2 = await interval.createInstance("BTC", 1, 1, [parseEther("1000"), 0]);
-        await tx2.wait();
-
-        let tx3 = await previousNPriceUpdates.setKeeper(1, deployer.address);
-        await tx3.wait();
-
-        let tx4 = await previousNPriceUpdates.createInstance("BTC", 1, 1, [3]);
-        await tx4.wait();
-
-        let tx5 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("800"));
-        await tx5.wait();
-
-        let tx6 = await comparator.createInstance(previousNPriceUpdatesAddress, intervalAddress, 1, 1);
-        await tx6.wait();
-
-        let tx7 = await interval.update(1);
-        await tx7.wait();
-
-        let tx8 = await previousNPriceUpdates.update(1);
-        await tx8.wait();
-
-        let tx9 = await previousNPriceUpdates.setLastUpdated(1, 0);
-        await tx9.wait();
-
-        let tx10 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("1100"));
-        await tx10.wait();
-
-        let tx11 = await previousNPriceUpdates.update(1);
-        await tx11.wait();
-
-        let tx12 = await previousNPriceUpdates.setLastUpdated(1, 0);
-        await tx12.wait();
-
-        let tx13 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("1150"));
-        await tx13.wait();
-
-        let tx14 = await previousNPriceUpdates.update(1);
-        await tx14.wait();
-
-        let tx15 = await comparator.setKeeper(1, deployer.address);
-        await tx15.wait();
-
-        let tx16 = await comparator.checkConditions(1);
-        await tx16.wait();
-
-        let isActive = await comparator.isActive(1);
-        expect(isActive).to.be.true;
-
-        let canUpdate = await comparator.canUpdate(1);
-        expect(canUpdate).to.be.false;
-
-        let meetsConditions = await comparator.meetsConditions(1);
-        expect(meetsConditions).to.be.false;
-    });
-
-    it("Multi price history; one update; meets conditions", async () => {
         let tx = await interval.setKeeper(1, deployer.address);
         await tx.wait();
 
@@ -510,7 +392,125 @@ describe("IsAbove", () => {
         expect(canUpdate).to.be.false;
 
         let meetsConditions = await comparator.meetsConditions(1);
+        expect(meetsConditions).to.be.false;
+    });
+
+    it("Multi price history; one update; one value fails conditions", async () => {
+        let tx = await interval.setKeeper(1, deployer.address);
+        await tx.wait();
+
+        let tx2 = await interval.createInstance("BTC", 1, 1, [parseEther("1000"), 1]);
+        await tx2.wait();
+
+        let tx3 = await previousNPriceUpdates.setKeeper(1, deployer.address);
+        await tx3.wait();
+
+        let tx4 = await previousNPriceUpdates.createInstance("BTC", 1, 1, [3]);
+        await tx4.wait();
+
+        let tx5 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("1800"));
+        await tx5.wait();
+
+        let tx6 = await comparator.createInstance(previousNPriceUpdatesAddress, intervalAddress, 1, 1);
+        await tx6.wait();
+
+        let tx7 = await interval.update(1);
+        await tx7.wait();
+
+        let tx8 = await previousNPriceUpdates.update(1);
+        await tx8.wait();
+
+        let tx9 = await previousNPriceUpdates.setLastUpdated(1, 0);
+        await tx9.wait();
+
+        let tx10 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("100"));
+        await tx10.wait();
+
+        let tx11 = await previousNPriceUpdates.update(1);
+        await tx11.wait();
+
+        let tx12 = await previousNPriceUpdates.setLastUpdated(1, 0);
+        await tx12.wait();
+
+        let tx13 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("150"));
+        await tx13.wait();
+
+        let tx14 = await previousNPriceUpdates.update(1);
+        await tx14.wait();
+
+        let tx15 = await comparator.setKeeper(1, deployer.address);
+        await tx15.wait();
+
+        let tx16 = await comparator.checkConditions(1);
+        await tx16.wait();
+
+        let isActive = await comparator.isActive(1);
+        expect(isActive).to.be.true;
+
+        let canUpdate = await comparator.canUpdate(1);
+        expect(canUpdate).to.be.false;
+
+        let meetsConditions = await comparator.meetsConditions(1);
+        expect(meetsConditions).to.be.false;
+    });
+
+    it("Multi price history; one update; meets conditions", async () => {
+        let tx = await interval.setKeeper(1, deployer.address);
+        await tx.wait();
+
+        let tx2 = await interval.createInstance("BTC", 1, 1, [parseEther("1000"), 0]);
+        await tx2.wait();
+
+        let tx3 = await previousNPriceUpdates.setKeeper(1, deployer.address);
+        await tx3.wait();
+
+        let tx4 = await previousNPriceUpdates.createInstance("BTC", 1, 1, [3]);
+        await tx4.wait();
+
+        let tx5 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("1800"));
+        await tx5.wait();
+
+        let tx6 = await comparator.createInstance(previousNPriceUpdatesAddress, intervalAddress, 1, 1);
+        await tx6.wait();
+
+        let tx7 = await interval.update(1);
+        await tx7.wait();
+
+        let tx8 = await previousNPriceUpdates.update(1);
+        await tx8.wait();
+
+        let tx9 = await previousNPriceUpdates.setLastUpdated(1, 0);
+        await tx9.wait();
+
+        let tx10 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("1900"));
+        await tx10.wait();
+
+        let tx11 = await previousNPriceUpdates.update(1);
+        await tx11.wait();
+
+        let tx12 = await previousNPriceUpdates.setLastUpdated(1, 0);
+        await tx12.wait();
+
+        let tx13 = await candlestickDataFeedRegistry.setPrice("BTC", 1, parseEther("1950"));
+        await tx13.wait();
+
+        let tx14 = await previousNPriceUpdates.update(1);
+        await tx14.wait();
+
+        let tx15 = await comparator.setKeeper(1, deployer.address);
+        await tx15.wait();
+
+        let tx16 = await comparator.checkConditions(1);
+        await tx16.wait();
+
+        let isActive = await comparator.isActive(1);
+        expect(isActive).to.be.true;
+
+        let canUpdate = await comparator.canUpdate(1);
+        expect(canUpdate).to.be.false;
+
+        let meetsConditions = await comparator.meetsConditions(1);
         expect(meetsConditions).to.be.true;
     });
   });
-});*/
+});
