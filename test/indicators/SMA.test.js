@@ -1,6 +1,6 @@
 const { expect } = require("chai");
 const { parseEther } = require("@ethersproject/units");
-
+/*
 describe("SMA", () => {
   let deployer;
   let otherUser;
@@ -333,4 +333,4 @@ describe("SMA", () => {
       expect(history[0]).to.equal(parseEther("10"));
     });
   });
-});
+});*/

@@ -20,6 +20,14 @@ interface IComparator {
     function getName() external pure returns (string memory);
 
     /**
+    * @notice Returns the timeframe (in minutes) of the given instance of this comparator.
+    * @dev The comparator timeframe is min(indicator 1 timeframe, indicator 2 timeframe).
+    * @param _instance Instance number of this comparator.
+    * @return uint256 Timeframe of the comparator instance.
+    */
+    function comparatorTimeframe(uint256 _instance) external view returns (uint256);
+
+    /**
     * @notice Returns whether the latest comparator instance update meets conditions.
     */
     function meetsConditions(uint256 _instance) external view returns (bool);

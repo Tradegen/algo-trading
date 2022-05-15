@@ -36,7 +36,7 @@ contract FallsTo is IComparator {
 
     // (instance number => timeframe, in minutes).
     // The comparator instance's timeframe can be different from the asset's timeframe.
-    mapping (uint256 => uint256) public comparatorTimeframe;
+    mapping (uint256 => uint256) public override comparatorTimeframe;
 
     // (instance number => address of the instance's dedicated keeper).
     mapping (uint256 => address) public keepers;

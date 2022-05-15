@@ -129,7 +129,7 @@ contract ComponentsRegistry is IComponentsRegistry, IComponent, Ownable {
     /**
     * @notice Checks indicator/comparator info when creating a new upkeep.
     * @dev This function is meant to be called by the KeeperRegistry contract.
-    * @dev Checks if _owner owns the given instance, target is a valid indicator/comparator, and there's no existing keeper for the given instance.
+    * @dev Checks if _owner owns the given instance, target is a valid indicator/comparator, and the component instance is valid.
     * @param _owner Address of the owner to check.
     * @param _isIndicator Whether the component is an indicator.
     * @param _target Address of the indicator/comparator.
@@ -152,8 +152,8 @@ contract ComponentsRegistry is IComponentsRegistry, IComponent, Ownable {
             return false;
         }
 
-        // Check whether the component is active.
-        return _isIndicator ? IIndicator(_target).isActive(_instanceID) : IComparator(_target).isActive(_instanceID);
+        // Check whether the component instance is valid.
+        return _isIndicator ? IIndicator(_target).indicatorTimeframe(_instanceID) > 0 : IComparator(_target).comparatorTimeframe(_instanceID) > 0;
     }
 
     /**
@@ -292,8 +292,8 @@ contract ComponentsRegistry is IComponentsRegistry, IComponent, Ownable {
         (,, address firstIndicatorAddress,,,) = getComponentInfo(_firstIndicatorID);
         (,, address secondIndicatorAddress,,,) = getComponentInfo(_secondIndicatorID);
 
-        require(IIndicator(firstIndicatorAddress).isActive(_firstIndicatorID), "ComponentsRegistry: First indicator is not active.");
-        require(IIndicator(secondIndicatorAddress).isActive(_secondIndicatorID), "ComponentsRegistry: Second indicator is not active.");
+        require(IIndicator(firstIndicatorAddress).isActive(_firstIndicatorInstanceID), "ComponentsRegistry: First indicator instance is not active.");
+        require(IIndicator(secondIndicatorAddress).isActive(_secondIndicatorInstanceID), "ComponentsRegistry: Second indicator instance is not active.");
         
         IComparator(contractAddress).createInstance(firstIndicatorAddress, secondIndicatorAddress, _firstIndicatorInstanceID, _secondIndicatorInstanceID);
         }
@@ -376,14 +376,14 @@ contract ComponentsRegistry is IComponentsRegistry, IComponent, Ownable {
 
     /**
      * @notice Publishes a component to the platform.
-     * @dev This function can only be called by the operator.
+     * @dev This function can only be called by the contract owner.
      * @dev Assumes that the component's contract (separate from the NFT) has already been deployed.
      * @param _contractAddress Address of the indicator/comparator.
      * @param _isIndicator Whether the component is an indicator.
      * @param _componentOwner The user who created the indicator/comparator contract.
      * @param _fee Fee, in TGEN, for creating instances of the component.
      */
-    function publishComponent(address _contractAddress, bool _isIndicator, address _componentOwner, uint256 _fee) external override initialized {
+    function publishComponent(address _contractAddress, bool _isIndicator, address _componentOwner, uint256 _fee) external override initialized onlyOwner {
         uint256 componentID = componentsFactory.createComponent(_contractAddress, _isIndicator, _componentOwner, _fee);
         address instancesAddress = componentInstancesFactory.createInstance(componentID);
         componentsFactory.setComponentInstancesAddress(componentID, instancesAddress);
