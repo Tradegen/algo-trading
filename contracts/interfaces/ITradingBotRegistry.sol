@@ -123,7 +123,7 @@ interface ITradingBotRegistry {
      * @dev Use 5 steps to create/initialize bot to avoid 'stack-too-deep' error.
      * @param _index Index of the trading bot.
      */
-    function intializeTradingBot(uint256 _index) external;
+    function initializeTradingBot(uint256 _index) external;
 
     /**
      * @notice Sets entry/exit rules for the trading bot contract.

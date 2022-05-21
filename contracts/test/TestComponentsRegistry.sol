@@ -25,4 +25,8 @@ contract TestComponentsRegistry {
     function setMeetsConditions(uint256 _componentID, uint256 _instanceID, bool _value) external {
         meetsConditions[_componentID][_instanceID] = _value;
     }
+
+    function checkRules(address _owner, uint256[] memory _componentIDs, uint256[] memory _instanceIDs) external view returns (bool) {
+        return ret;
+    }
 }

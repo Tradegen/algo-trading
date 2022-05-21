@@ -25,6 +25,7 @@ contract TradingBotRegistry is ITradingBotRegistry, Ownable {
 
     uint256 public MAX_TRADING_BOTS_PER_USER;
     uint256 public MINT_FEE;
+    uint256 public MAX_USAGE_FEE;
 
     ITradingBots public immutable tradingBotNFT;
     IBotPerformanceDataFeedRegistry public immutable botPerformanceDataFeedRegistry;
@@ -56,6 +57,7 @@ contract TradingBotRegistry is ITradingBotRegistry, Ownable {
         registrar = msg.sender;
         MAX_TRADING_BOTS_PER_USER = 3;
         MINT_FEE = 1e20;
+        MAX_USAGE_FEE = 1e21;
     }
 
     /* ========== VIEWS ========== */
@@ -76,6 +78,11 @@ contract TradingBotRegistry is ITradingBotRegistry, Ownable {
 
         // Trading bot has a different owner.
         if (ITradingBot(_target).owner() != _owner) {
+            return false;
+        }
+
+        // Trading bot does not have a data feed.
+        if (ITradingBot(_target).dataFeed() == address(0)) {
             return false;
         }
 
@@ -175,22 +182,6 @@ contract TradingBotRegistry is ITradingBotRegistry, Ownable {
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
-    
-    /**
-    * @notice Updates the address of the given trading bot's data feed.
-    * @dev Only the owner of the TradingBotRegistry contract can call this function.
-    * @dev Transaction will revert if the trading bot is not found.
-    * @param _index Index of the trading bot.
-    * @param _dataFeed Address of the BotPerformanceDataFeed contract.
-    */
-    function setDataFeed(uint256 _index, address _dataFeed) external override onlyOperator {
-        require(_index > 0 && _index <= numberOfTradingBots, "TradingBotRegistry: Index out of bounds.");
-        require(tradingBotAddresses[_index] == IBotPerformanceDataFeed(_dataFeed).dataProvider(), "TradingBotRegistry: Trading bot is not the data provider for this data feed.");
-
-        ITradingBot(tradingBotAddresses[_index]).setDataFeed(_dataFeed);
-
-        emit SetDataFeed(_index, _dataFeed);
-    }
 
     /**
      * @notice Stores the trading bot parameters in a struct before creating the bot.
@@ -230,7 +221,7 @@ contract TradingBotRegistry is ITradingBotRegistry, Ownable {
         tradingBotsPerUser[msg.sender] = tradingBotsPerUser[msg.sender].add(1);
         tradingBotInfos[index] = TradingBotInfo({
             owner: msg.sender,
-            status: 0,
+            status: 1,
             name: _name,
             symbol: _symbol,
             timeframe: _timeframe,
@@ -269,7 +260,7 @@ contract TradingBotRegistry is ITradingBotRegistry, Ownable {
      * @dev Use 5 steps to create/initialize bot to avoid 'stack-too-deep' error.
      * @param _index Index of the trading bot.
      */
-    function intializeTradingBot(uint256 _index) external override {
+    function initializeTradingBot(uint256 _index) external override {
         require(msg.sender == tradingBotInfos[_index].owner, "TradingBotRegistry: Only the trading bot owner can call this function.");
         require(tradingBotInfos[_index].status == 2, "TradingBotRegistry: Trading bot has the wrong status.");
 
@@ -306,6 +297,8 @@ contract TradingBotRegistry is ITradingBotRegistry, Ownable {
         require(tradingBotInfos[_index].status == 3, "TradingBotRegistry: Trading bot has the wrong status.");
         require(_entryRuleComponents.length <= 7, "TradingBotRegistry: Too many entry rules.");
         require(_exitRuleComponents.length <= 7, "TradingBotRegistry: Too many exit rules.");
+        require(_entryRuleComponents.length == _entryRuleInstances.length, "TradingBotRegistry: Entry rule components/instances have different length.");
+        require(_exitRuleComponents.length == _exitRuleInstances.length, "TradingBotRegistry: Exit rule components/instances have different length.");
         require(componentsRegistry.checkRules(tradingBotInfos[_index].owner, _entryRuleComponents, _entryRuleInstances), "TradingBotRegistry: Trading bot owner does not have access to each entry rule.");
         require(componentsRegistry.checkRules(tradingBotInfos[_index].owner, _exitRuleComponents, _exitRuleInstances), "TradingBotRegistry: Trading bot owner does not have access to each exit rule.");
     
@@ -335,6 +328,22 @@ contract TradingBotRegistry is ITradingBotRegistry, Ownable {
     }
     
     /* ========== RESTRICTED FUNCTIONS ========== */
+
+    /**
+    * @notice Updates the address of the given trading bot's data feed.
+    * @dev Only the owner of the TradingBotRegistry contract can call this function.
+    * @dev Transaction will revert if the trading bot is not found.
+    * @param _index Index of the trading bot.
+    * @param _dataFeed Address of the BotPerformanceDataFeed contract.
+    */
+    function setDataFeed(uint256 _index, address _dataFeed) external override onlyOperator {
+        require(_index > 0 && _index <= numberOfTradingBots, "TradingBotRegistry: Index out of bounds.");
+        require(tradingBotAddresses[_index] == IBotPerformanceDataFeed(_dataFeed).dataProvider(), "TradingBotRegistry: Trading bot is not the data provider for this data feed.");
+
+        ITradingBot(tradingBotAddresses[_index]).setDataFeed(_dataFeed);
+
+        emit SetDataFeed(_index, _dataFeed);
+    }
 
     /**
      * @notice Publishes the trading bot to the platform.
@@ -405,6 +414,19 @@ contract TradingBotRegistry is ITradingBotRegistry, Ownable {
         emit UpdatedMintFee(_newFee);
     }
 
+    /**
+     * @notice Updates the max usage fee.
+     * @dev This function can only be called by the operator.
+     * @param _newFee The new max usage fee.
+     */
+    function updateMaxUsageFee(uint256 _newFee) external onlyOperator {
+        require(_newFee >= 0, "TradingBotRegistry: New fee must be positive.");
+
+        MAX_USAGE_FEE = _newFee;
+
+        emit UpdatedMaxUsageFee(_newFee);
+    }
+
     /* ========== MODIFIERS ========== */
 
     modifier onlyRegistrar() {
@@ -430,4 +452,5 @@ contract TradingBotRegistry is ITradingBotRegistry, Ownable {
     event StagedTradingBot(uint256 index, address owner, string name, string symbol, uint256 timeframe, uint256 maxTradeDuration, uint256 profitTarget, uint256 stopLoss, string tradedAsset, uint256 assetTimeframe, uint256 usageFee);
     event IncreasedMaxTradingBotsPerUser(uint256 newLimit);
     event UpdatedMintFee(uint256 newFee);
+    event UpdatedMaxUsageFee(uint256 newFee);
 }
