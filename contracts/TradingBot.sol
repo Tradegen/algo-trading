@@ -210,16 +210,16 @@ contract TradingBot is ITradingBot {
         // Trading bot has an open position.
         else {
             // Check if profit target is met.
-            if (highPrice >= latestPrice.mul(params.profitTarget.add(10000)).div(10000)) {
+            if (highPrice >= botState.entryPrice.mul(params.profitTarget.add(10000)).div(10000)) {
                 botState.inTrade = false;
 
-                IBotPerformanceDataFeed(dataFeed).updateData(params.tradedAsset, false, latestPrice.mul(params.profitTarget.add(10000)).div(10000), block.timestamp);
+                IBotPerformanceDataFeed(dataFeed).updateData(params.tradedAsset, false, botState.entryPrice.mul(params.profitTarget.add(10000)).div(10000), block.timestamp);
             }
             // Check if stop loss is met.
-            else if (lowPrice <= latestPrice.mul(uint256(10000).sub(params.stopLoss)).div(10000)) {
+            else if (lowPrice <= botState.entryPrice.mul(uint256(10000).sub(params.stopLoss)).div(10000)) {
                 botState.inTrade = false;
 
-                IBotPerformanceDataFeed(dataFeed).updateData(params.tradedAsset, false, latestPrice.mul(uint256(10000).sub(params.stopLoss)).div(10000), block.timestamp);
+                IBotPerformanceDataFeed(dataFeed).updateData(params.tradedAsset, false, botState.entryPrice.mul(uint256(10000).sub(params.stopLoss)).div(10000), block.timestamp);
             }
             // Check if max trade duration is met or exit rules are met.
             else if (index >= botState.entryIndex.add(params.maxTradeDuration) || _checkRules(false)) {
@@ -251,6 +251,8 @@ contract TradingBot is ITradingBot {
     * @param _newOperator Address of the new operator.
     */
     function setOperator(address _newOperator) external override onlyOperator {
+        require(_newOperator != address(0), "TradingBot: Invalid address for _newOperator.");
+
         operator = _newOperator;
 
         emit SetOperator(_newOperator);
@@ -300,17 +302,17 @@ contract TradingBot is ITradingBot {
 
         if (_isEntryRule) {
             entryRuleComponents[_index] = entryRuleComponents[length.sub(1)];
-            delete entryRuleComponents[length.sub(1)];
+            entryRuleComponents.pop();
 
             entryRuleInstances[_index] = entryRuleInstances[length.sub(1)];
-            delete entryRuleInstances[length.sub(1)];
+            entryRuleInstances.pop();
         }
         else {
-            entryRuleComponents[_index] = entryRuleComponents[length.sub(1)];
-            delete entryRuleComponents[length.sub(1)];
+            exitRuleComponents[_index] = exitRuleComponents[length.sub(1)];
+            exitRuleComponents.pop();
 
-            entryRuleInstances[_index] = entryRuleInstances[length.sub(1)];
-            delete entryRuleInstances[length.sub(1)];
+            exitRuleInstances[_index] = exitRuleInstances[length.sub(1)];
+            exitRuleInstances.pop();
         }
 
         emit RemovedRule(_isEntryRule, componentID, instanceID);
@@ -439,7 +441,7 @@ contract TradingBot is ITradingBot {
 
         if (_checkEntryRules) {
             for (uint256 i = 0; i < length; i++) {
-                if (!componentsRegistry.meetsConditions(entryRuleComponents[i], exitRuleInstances[i])) {
+                if (!componentsRegistry.meetsConditions(entryRuleComponents[i], entryRuleInstances[i])) {
                     return false;
                 }
             }

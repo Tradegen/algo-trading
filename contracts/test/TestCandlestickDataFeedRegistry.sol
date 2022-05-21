@@ -22,7 +22,7 @@ contract TestCandlestickDataFeedRegistry {
     }
 
     function getCurrentCandlestick(string memory _asset, uint256 _timeframe) external view returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256) {
-        return (0, prices[_asset][_timeframe], prices[_asset][_timeframe], 0, 0, 0, 0);
+        return (0, prices[_asset][_timeframe], prices[_asset][_timeframe], prices[_asset][_timeframe], prices[_asset][_timeframe], 0, 0);
     }
 
     function hasDataFeed(string memory _asset, uint256 _timeframe) external view returns (bool) {
