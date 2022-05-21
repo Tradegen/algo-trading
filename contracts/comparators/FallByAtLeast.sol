@@ -119,7 +119,7 @@ contract FallByAtLeast is IComparator {
                             uint256 _secondIndicatorInstance) external override onlyComponentRegistry returns (uint256) {
         require(_firstIndicatorAddress != address(0), "Comparator: Invalid address for first indicator.");
         require(_secondIndicatorAddress != address(0), "Comparator: Invalid address for second indicator.");
-        require(_firstIndicatorAddress != _secondIndicatorAddress, "Comparator: Indicators are the same.");
+        require(!(_firstIndicatorAddress == _secondIndicatorAddress && _firstIndicatorInstance == _secondIndicatorInstance), "Comparator: Indicators are the same.");
 
         uint256 indicatorTimeframe1 = IIndicator(_firstIndicatorAddress).indicatorTimeframe(_firstIndicatorInstance);
         uint256 indicatorTimeframe2 = IIndicator(_secondIndicatorAddress).indicatorTimeframe(_secondIndicatorInstance);
@@ -192,6 +192,8 @@ contract FallByAtLeast is IComparator {
     * @param _newKeeper Address of the new keeper contract.
     */
     function setKeeper(uint256 _instance, address _newKeeper) external override onlyKeeperRegistry {
+        require((_newKeeper == address(0) && keepers[_instance] != address(0)) || (_newKeeper != address(0) && keepers[_instance] == address(0)), "Comparator: Invalid keeper.");
+        
         keepers[_instance] = _newKeeper;
 
         emit UpdatedKeeper(_instance, _newKeeper);

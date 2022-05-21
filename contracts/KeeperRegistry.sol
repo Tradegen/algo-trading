@@ -200,17 +200,17 @@ contract KeeperRegistry is IKeeperRegistry, Ownable, ReentrancyGuard {
 
     /**
     * @notice Claims all available fees for the given keeper contract.
+    * @dev Assumes that msg.sender is the payee.
     * @dev Only the keeper contract's payee can call this function.
     * @param _keeper Address of the keeper contract.
     */
     function claimFees(address _keeper) external override onlyPayee(_keeper) nonReentrant {
-        address payee = keepers[_keeper].payee;
-        uint256 amount = availableFees[_keeper];
+        uint256 amount = availableFees[msg.sender];
 
-        availableFees[_keeper] = 0;
-        feeToken.safeTransfer(payee, amount);
+        availableFees[msg.sender] = 0;
+        feeToken.safeTransfer(msg.sender, amount);
 
-        emit ClaimedFees(_keeper, payee, amount);
+        emit ClaimedFees(_keeper, msg.sender, amount);
     }
 
     /**
@@ -285,7 +285,7 @@ contract KeeperRegistry is IKeeperRegistry, Ownable, ReentrancyGuard {
 
         // Move the job ID at the last index to the index of the job being cancelled.
         keeperJobs[keeper][index] = keeperJobs[keeper][length.sub(1)];
-        delete keeperJobs[keeper][length.sub(1)];
+        keeperJobs[keeper].pop();
 
         uint256 jobType = upkeeps[_jobID].jobType;
         address target = upkeeps[_jobID].target;
@@ -343,9 +343,24 @@ contract KeeperRegistry is IKeeperRegistry, Ownable, ReentrancyGuard {
         emit ChargedFee(_jobID, payee, fee);
     }
 
+    /**
+    * @notice Updates the address of the given keeper contract's dedicated caller.
+    * @dev Only the keeper contract's owner can call this function.
+    * @param _keeper Address of the keeper contract.
+    * @param _newCaller Address of the new dedicated caller.
+    */
+    function updateDedicatedCaller(address _keeper, address _newCaller) external override onlyKeeperOwner(_keeper) {
+        require(_newCaller != address(0), "KeeperRegistry: Invalid address for _newCaller.");
+
+        keepers[_keeper].caller = _newCaller;
+        IKeeper(_keeper).updateDedicatedCaller(_newCaller);
+
+        emit UpdatedDedicatedCaller(_keeper, _newCaller);
+    }
+
     /* ========== INTERNAL FUNCTIONS ========== */
 
-     /**
+    /**
     * @notice Deducts [_amount] from the job's available funds and transfers [_amount] of fee tokens to [_to].
     * @param _to Address of the user/contract receiving the funds.
     * @param _jobID The job ID.
@@ -395,4 +410,5 @@ contract KeeperRegistry is IKeeperRegistry, Ownable, ReentrancyGuard {
     event UpdatedKeeperFee(address keeper, uint256 newFee);
     event RegisteredKeeper(address keeper, address owner, address dedicatedCaller, address payee, uint256 fee);
     event CreatedJob(uint8 jobType, uint256 jobID, address owner, address keeper, address target, uint256 instanceID);
+    event UpdatedDedicatedCaller(address keeper, address newCaller);
 }

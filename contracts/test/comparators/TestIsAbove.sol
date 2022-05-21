@@ -2,11 +2,11 @@
 
 pragma solidity ^0.8.3;
 
-import "../comparators/RiseByAtMost.sol";
+import "../../comparators/IsAbove.sol";
 
-contract TestRiseByAtMost is RiseByAtMost {
+contract TestIsAbove is IsAbove {
     constructor(address _componentRegistry, address _keeperRegistry)
-        RiseByAtMost(_componentRegistry, _keeperRegistry)
+        IsAbove(_componentRegistry, _keeperRegistry)
     {
         
     }

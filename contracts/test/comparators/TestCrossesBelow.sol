@@ -2,11 +2,11 @@
 
 pragma solidity ^0.8.3;
 
-import "../indicators/SMA.sol";
+import "../../comparators/CrossesBelow.sol";
 
-contract TestSMA is SMA {
-    constructor(address _componentRegistry, address _candlestickDataFeedRegistry, address _keeperRegistry)
-        SMA(_componentRegistry, _candlestickDataFeedRegistry, _keeperRegistry)
+contract TestCrossesBelow is CrossesBelow {
+    constructor(address _componentRegistry, address _keeperRegistry)
+        CrossesBelow(_componentRegistry, _keeperRegistry)
     {
         
     }

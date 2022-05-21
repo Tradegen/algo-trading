@@ -136,7 +136,7 @@ contract ComponentsRegistry is IComponentsRegistry, IComponent, Ownable {
     * @param _instanceID The instance ID of the indicator/comparator.
     * @return bool Whether the upkeep can be created.
     */
-    function checkInfoForUpkeep(address _owner, bool _isIndicator, address _target, uint256 _instanceID) external view override returns (bool) {
+    function checkInfoForUpkeep(address _owner, bool _isIndicator, address _target, uint256 _instanceID) public view override returns (bool) {
         uint256 componentID = components[_target];
 
         // Check if component is valid.
@@ -144,12 +144,15 @@ contract ComponentsRegistry is IComponentsRegistry, IComponent, Ownable {
             return false;
         }
 
-        (address owner,, address contractAddress,,) = componentsFactory.getComponentInfo(componentID);
+        {
+        (,, address contractAddress,,) = componentsFactory.getComponentInfo(componentID);
+        (address owner,,,) = getComponentInstanceInfo(componentID, _instanceID);
 
         // Check if given owner matches the component's owner.
         // Check that given target matches component's contract address.
         if (owner != _owner || contractAddress != _target) {
             return false;
+        }
         }
 
         // Check whether the component instance is valid.
@@ -247,8 +250,10 @@ contract ComponentsRegistry is IComponentsRegistry, IComponent, Ownable {
                                      uint256 _assetTimeframe,
                                      uint256 _indicatorTimeframe,
                                      uint256[] memory _params) external override initialized {
+        uint256 instanceID;
+        {
         address instanceAddress = componentsFactory.componentInstance(_componentID);
-        (,, address contractAddress,, uint256 fee,) = getComponentInfo(_componentID);
+        (address owner,, address contractAddress,, uint256 fee,) = getComponentInfo(_componentID);
 
         require(instanceAddress != address(0), "ComponentsRegistry: Component not found.");
         require(candlestickDataFeedRegistry.hasDataFeed(_asset, _assetTimeframe), "ComponentsRegistry: No data feed for given asset and timeframe.");
@@ -257,8 +262,9 @@ contract ComponentsRegistry is IComponentsRegistry, IComponent, Ownable {
         feeToken.safeTransferFrom(msg.sender, address(this), fee);
         feeToken.approve(instanceAddress, fee);
 
-        uint256 instanceID = IComponentInstances(instanceAddress).createInstance(msg.sender, _price, _isDefault);
+        instanceID = IComponentInstances(instanceAddress).createInstance(msg.sender, _price, _isDefault, owner, fee);
         IIndicator(contractAddress).createInstance(_asset, _assetTimeframe, _indicatorTimeframe, _params);
+        }
 
         emit CreatedIndicatorInstance(_componentID, instanceID, msg.sender, _isDefault, _price, _asset, _assetTimeframe, _indicatorTimeframe, _params);
     }
@@ -280,8 +286,11 @@ contract ComponentsRegistry is IComponentsRegistry, IComponent, Ownable {
                                       uint256 _secondIndicatorID,
                                       uint256 _firstIndicatorInstanceID,
                                       uint256 _secondIndicatorInstanceID) external override initialized {
+        require(hasPurchasedComponentInstance(msg.sender, _firstIndicatorID, _firstIndicatorInstanceID), "ComponentsRegistry: Have not purchased first indicator instance.");
+        require(hasPurchasedComponentInstance(msg.sender, _secondIndicatorID, _secondIndicatorInstanceID), "ComponentsRegistry: Have not purchased second indicator instance.");
+
         address instanceAddress = componentsFactory.componentInstance(_componentID);
-        (,, address contractAddress,, uint256 fee,) = getComponentInfo(_componentID);
+        (address owner,, address contractAddress,, uint256 fee,) = getComponentInfo(_componentID);
 
         require(instanceAddress != address(0), "ComponentsRegistry: Component not found.");
 
@@ -298,7 +307,7 @@ contract ComponentsRegistry is IComponentsRegistry, IComponent, Ownable {
         IComparator(contractAddress).createInstance(firstIndicatorAddress, secondIndicatorAddress, _firstIndicatorInstanceID, _secondIndicatorInstanceID);
         }
 
-        uint256 instanceID = IComponentInstances(instanceAddress).createInstance(msg.sender, _price, _isDefault);
+        uint256 instanceID = IComponentInstances(instanceAddress).createInstance(msg.sender, _price, _isDefault, owner, fee);
 
         emit CreatedComparatorInstance(_componentID, instanceID, msg.sender, _price, _isDefault, _firstIndicatorID, _secondIndicatorID, _firstIndicatorInstanceID, _secondIndicatorInstanceID);
     }
@@ -387,6 +396,7 @@ contract ComponentsRegistry is IComponentsRegistry, IComponent, Ownable {
         uint256 componentID = componentsFactory.createComponent(_contractAddress, _isIndicator, _componentOwner, _fee);
         address instancesAddress = componentInstancesFactory.createInstance(componentID);
         componentsFactory.setComponentInstancesAddress(componentID, instancesAddress);
+        components[_contractAddress] = componentID;
 
         emit PublishedComponent(componentID, instancesAddress, _contractAddress, _isIndicator, _componentOwner, _fee);
     }

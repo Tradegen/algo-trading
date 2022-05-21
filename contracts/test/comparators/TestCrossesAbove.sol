@@ -2,11 +2,11 @@
 
 pragma solidity ^0.8.3;
 
-import "../indicators/PreviousNPriceUpdates.sol";
+import "../../comparators/CrossesAbove.sol";
 
-contract TestPreviousNPriceUpdates is PreviousNPriceUpdates {
-    constructor(address _componentRegistry, address _candlestickDataFeedRegistry, address _keeperRegistry)
-        PreviousNPriceUpdates(_componentRegistry, _candlestickDataFeedRegistry, _keeperRegistry)
+contract TestCrossesAbove is CrossesAbove {
+    constructor(address _componentRegistry, address _keeperRegistry)
+        CrossesAbove(_componentRegistry, _keeperRegistry)
     {
         
     }

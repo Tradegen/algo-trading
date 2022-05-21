@@ -2,11 +2,11 @@
 
 pragma solidity ^0.8.3;
 
-import "../comparators/FallByAtMost.sol";
+import "../../comparators/Closes.sol";
 
-contract TestFallByAtMost is FallByAtMost {
+contract TestCloses is Closes {
     constructor(address _componentRegistry, address _keeperRegistry)
-        FallByAtMost(_componentRegistry, _keeperRegistry)
+        Closes(_componentRegistry, _keeperRegistry)
     {
         
     }

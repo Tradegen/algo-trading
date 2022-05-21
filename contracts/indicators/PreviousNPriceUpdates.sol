@@ -223,6 +223,8 @@ contract PreviousNPriceUpdates is IIndicator {
     * @param _newKeeper Address of the new keeper contract.
     */
     function setKeeper(uint256 _instance, address _newKeeper) external override onlyKeeperRegistry {
+        require((_newKeeper == address(0) && keepers[_instance] != address(0)) || (_newKeeper != address(0) && keepers[_instance] == address(0)), "Indicator: Invalid keeper.");
+        
         keepers[_instance] = _newKeeper;
 
         emit UpdatedKeeper(_instance, _newKeeper);

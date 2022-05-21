@@ -183,7 +183,7 @@ contract TradingBotRegistry is ITradingBotRegistry, Ownable {
     * @param _index Index of the trading bot.
     * @param _dataFeed Address of the BotPerformanceDataFeed contract.
     */
-    function setDataFeed(uint256 _index, address _dataFeed) external override {
+    function setDataFeed(uint256 _index, address _dataFeed) external override onlyOperator {
         require(_index > 0 && _index <= numberOfTradingBots, "TradingBotRegistry: Index out of bounds.");
         require(tradingBotAddresses[_index] == IBotPerformanceDataFeed(_dataFeed).dataProvider(), "TradingBotRegistry: Trading bot is not the data provider for this data feed.");
 

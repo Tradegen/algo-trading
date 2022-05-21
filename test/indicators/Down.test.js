@@ -40,11 +40,40 @@ describe("Down", () => {
     });
 
     it("meets requirements", async () => {
-        let tx = await indicator.setKeeper(1, otherUser.address);
-        await tx.wait();
+      let tx = await indicator.setKeeper(1, otherUser.address);
+      await tx.wait();
 
-        let keeper = await indicator.keepers(1);
-        expect(keeper).to.equal(otherUser.address);
+      let keeper = await indicator.keepers(1);
+      expect(keeper).to.equal(otherUser.address);
+    });
+
+    it("reset keeper", async () => {
+      let tx = await indicator.setKeeper(1, deployer.address);
+      await tx.wait();
+
+      let zeroAddress = await indicator.keepers(5);
+
+      let tx2 = await indicator.setKeeper(1, zeroAddress);
+      await tx2.wait();
+
+      let keeper = await indicator.keepers(1);
+      expect(keeper).to.equal(zeroAddress);
+    });
+
+    it("reset keeper and set again", async () => {
+      let tx = await indicator.setKeeper(1, deployer.address);
+      await tx.wait();
+
+      let zeroAddress = await indicator.keepers(5);
+
+      let tx2 = await indicator.setKeeper(1, zeroAddress);
+      await tx2.wait();
+
+      let tx3 = await indicator.setKeeper(1, otherUser.address);
+      await tx3.wait();
+
+      let keeper = await indicator.keepers(1);
+      expect(keeper).to.equal(otherUser.address);
     });
   });
 

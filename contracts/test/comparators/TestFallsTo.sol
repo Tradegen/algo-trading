@@ -2,11 +2,11 @@
 
 pragma solidity ^0.8.3;
 
-import "../indicators/Interval.sol";
+import "../../comparators/FallsTo.sol";
 
-contract TestInterval is Interval {
-    constructor(address _componentRegistry, address _candlestickDataFeedRegistry, address _keeperRegistry)
-        Interval(_componentRegistry, _candlestickDataFeedRegistry, _keeperRegistry)
+contract TestFallsTo is FallsTo {
+    constructor(address _componentRegistry, address _keeperRegistry)
+        FallsTo(_componentRegistry, _keeperRegistry)
     {
         
     }

@@ -2,11 +2,11 @@
 
 pragma solidity ^0.8.3;
 
-import "../comparators/IsBelow.sol";
+import "../../comparators/RisesTo.sol";
 
-contract TestIsBelow is IsBelow {
+contract TestRisesTo is RisesTo {
     constructor(address _componentRegistry, address _keeperRegistry)
-        IsBelow(_componentRegistry, _keeperRegistry)
+        RisesTo(_componentRegistry, _keeperRegistry)
     {
         
     }

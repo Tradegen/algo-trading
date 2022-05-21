@@ -9,7 +9,6 @@ import "./openzeppelin-solidity/contracts/SafeMath.sol";
 import './interfaces/external/ICandlestickDataFeedRegistry.sol';
 import './interfaces/external/IBotPerformanceDataFeed.sol';
 import './interfaces/IComponentsRegistry.sol';
-import './interfaces/ITradingBotRegistry.sol';
 
 // Inheritance.
 import './interfaces/ITradingBot.sol';
@@ -29,7 +28,7 @@ contract TradingBot is ITradingBot {
     // Contracts.
     IComponentsRegistry immutable componentsRegistry;
     ICandlestickDataFeedRegistry immutable candlestickDataFeedRegistry;
-    ITradingBotRegistry immutable tradingBotRegistry;
+    address immutable tradingBotRegistry;
     address immutable keeperRegistry;
     address immutable tradingBots;
 
@@ -58,7 +57,7 @@ contract TradingBot is ITradingBot {
         operator = _owner;
         componentsRegistry = IComponentsRegistry(_componentsRegistry);
         candlestickDataFeedRegistry = ICandlestickDataFeedRegistry(_candlestickDataFeedRegistry);
-        tradingBotRegistry = ITradingBotRegistry(_tradingBotRegistry);
+        tradingBotRegistry = _tradingBotRegistry;
         keeperRegistry = _keeperRegistry;
         tradingBots = _tradingBots;
     }
@@ -139,6 +138,7 @@ contract TradingBot is ITradingBot {
         require(_newOwner != address(0), "TradingBot: Invalid address for new owner.");
 
         owner = _newOwner;
+        operator = _newOwner;
 
         emit UpdatedOwner(_newOwner);
     }
@@ -479,7 +479,7 @@ contract TradingBot is ITradingBot {
 
 
     modifier onlyTradingBotRegistry() {
-        require(msg.sender == address(tradingBotRegistry), "TradingBot: Only the TradingBotRegistry contract can call this function.");
+        require(msg.sender == tradingBotRegistry, "TradingBot: Only the TradingBotRegistry contract can call this function.");
         _;
     }
 

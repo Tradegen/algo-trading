@@ -2,11 +2,11 @@
 
 pragma solidity ^0.8.3;
 
-import "../indicators/EMA.sol";
+import "../../indicators/NthPriceUpdate.sol";
 
-contract TestEMA is EMA {
+contract TestNthPriceUpdate is NthPriceUpdate {
     constructor(address _componentRegistry, address _candlestickDataFeedRegistry, address _keeperRegistry)
-        EMA(_componentRegistry, _candlestickDataFeedRegistry, _keeperRegistry)
+        NthPriceUpdate(_componentRegistry, _candlestickDataFeedRegistry, _keeperRegistry)
     {
         
     }

@@ -2,11 +2,11 @@
 
 pragma solidity ^0.8.3;
 
-import "../indicators/HighOfLastNPriceUpdates.sol";
+import "../../indicators/NPercent.sol";
 
-contract TestHighOfLastNPriceUpdates is HighOfLastNPriceUpdates {
+contract TestNPercent is NPercent {
     constructor(address _componentRegistry, address _candlestickDataFeedRegistry, address _keeperRegistry)
-        HighOfLastNPriceUpdates(_componentRegistry, _candlestickDataFeedRegistry, _keeperRegistry)
+        NPercent(_componentRegistry, _candlestickDataFeedRegistry, _keeperRegistry)
     {
         
     }

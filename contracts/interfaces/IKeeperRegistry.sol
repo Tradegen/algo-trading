@@ -139,4 +139,12 @@ interface IKeeperRegistry {
     * @param _jobID The job ID.
     */
     function chargeFee(uint256 _jobID) external;
+
+    /**
+    * @notice Updates the address of the given keeper contract's dedicated caller.
+    * @dev Only the keeper contract's owner can call this function.
+    * @param _keeper Address of the keeper contract.
+    * @param _newCaller Address of the new dedicated caller.
+    */
+    function updateDedicatedCaller(address _keeper, address _newCaller) external;
 }

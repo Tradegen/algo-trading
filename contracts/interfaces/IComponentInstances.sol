@@ -45,9 +45,11 @@ interface IComponentInstances {
     * @param _owner Address of the instance's owner.
     * @param _price The price, in TGEN, to use the instance.
     * @param _isDefault Whether the instance is default.
+    * @param _componentOwner Address of the component's owner.
+    * @param _componentFee The component's instance creation fee.
     * @return uint256 The token ID of the minted component instance.
     */
-    function createInstance(address _owner, uint256 _price, bool _isDefault) external returns (uint256);
+    function createInstance(address _owner, uint256 _price, bool _isDefault, address _componentOwner, uint256 _componentFee) external returns (uint256);
 
     /**
      * @notice Purchases the given component instance.

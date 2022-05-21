@@ -2,11 +2,11 @@
 
 pragma solidity ^0.8.3;
 
-import "../comparators/RisesTo.sol";
+import "../../comparators/RiseByAtMost.sol";
 
-contract TestRisesTo is RisesTo {
+contract TestRiseByAtMost is RiseByAtMost {
     constructor(address _componentRegistry, address _keeperRegistry)
-        RisesTo(_componentRegistry, _keeperRegistry)
+        RiseByAtMost(_componentRegistry, _keeperRegistry)
     {
         
     }

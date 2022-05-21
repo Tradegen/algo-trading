@@ -2,11 +2,11 @@
 
 pragma solidity ^0.8.3;
 
-import "../indicators/NPercent.sol";
+import "../../indicators/PreviousNPriceUpdates.sol";
 
-contract TestNPercent is NPercent {
+contract TestPreviousNPriceUpdates is PreviousNPriceUpdates {
     constructor(address _componentRegistry, address _candlestickDataFeedRegistry, address _keeperRegistry)
-        NPercent(_componentRegistry, _candlestickDataFeedRegistry, _keeperRegistry)
+        PreviousNPriceUpdates(_componentRegistry, _candlestickDataFeedRegistry, _keeperRegistry)
     {
         
     }

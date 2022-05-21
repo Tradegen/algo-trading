@@ -2,11 +2,11 @@
 
 pragma solidity ^0.8.3;
 
-import "../comparators/RiseByAtLeast.sol";
+import "../../indicators/EMA.sol";
 
-contract TestRiseByAtLeast is RiseByAtLeast {
-    constructor(address _componentRegistry, address _keeperRegistry)
-        RiseByAtLeast(_componentRegistry, _keeperRegistry)
+contract TestEMA is EMA {
+    constructor(address _componentRegistry, address _candlestickDataFeedRegistry, address _keeperRegistry)
+        EMA(_componentRegistry, _candlestickDataFeedRegistry, _keeperRegistry)
     {
         
     }

@@ -2,11 +2,11 @@
 
 pragma solidity ^0.8.3;
 
-import "../comparators/Closes.sol";
+import "../../indicators/Interval.sol";
 
-contract TestCloses is Closes {
-    constructor(address _componentRegistry, address _keeperRegistry)
-        Closes(_componentRegistry, _keeperRegistry)
+contract TestInterval is Interval {
+    constructor(address _componentRegistry, address _candlestickDataFeedRegistry, address _keeperRegistry)
+        Interval(_componentRegistry, _candlestickDataFeedRegistry, _keeperRegistry)
     {
         
     }

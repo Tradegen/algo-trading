@@ -8,9 +8,6 @@ import "./openzeppelin-solidity/contracts/ReentrancyGuard.sol";
 import "./openzeppelin-solidity/contracts/ERC1155/ERC1155.sol";
 import "./openzeppelin-solidity/contracts/ERC20/SafeERC20.sol";
 
-// Interfaces.
-import './interfaces/IComponent.sol';
-
 // Inheritance.
 import './interfaces/IComponentInstances.sol';
 
@@ -78,9 +75,11 @@ contract ComponentInstances is IComponentInstances, ERC1155, ReentrancyGuard {
     * @param _owner Address of the instance's owner.
     * @param _price The price, in TGEN, to use the instance.
     * @param _isDefault Whether the instance is default.
+    * @param _componentOwner Address of the component's owner.
+    * @param _componentFee The component's instance creation fee.
     * @return uint256 The token ID of the minted component instance.
     */
-    function createInstance(address _owner, uint256 _price, bool _isDefault) external override onlyComponentRegistry returns (uint256) {
+    function createInstance(address _owner, uint256 _price, bool _isDefault, address _componentOwner, uint256 _componentFee) external override onlyComponentRegistry returns (uint256) {
         uint256 tokenID = numberOfInstances.add(1);
 
         numberOfInstances = numberOfInstances.add(1);
@@ -95,15 +94,11 @@ contract ComponentInstances is IComponentInstances, ERC1155, ReentrancyGuard {
         // Create the NFT and transfer it to _owner.
         _mint(_owner, tokenID, 1, "");
 
-        // Gas savings.
-        uint256 fee = IComponent(componentRegistry).instanceCreationFee(componentID);
-        address componentOwner = IComponent(componentRegistry).componentOwner(componentID);
-
         // Transfer the creation fee to the component owner.
-        feeToken.safeTransferFrom(msg.sender, address(this), fee);
-        feeToken.safeTransfer(componentOwner, fee);
+        feeToken.safeTransferFrom(msg.sender, address(this), _componentFee);
+        feeToken.safeTransfer(_componentOwner, _componentFee);
 
-        emit CreatedInstance(tokenID, _owner, fee, componentOwner, _price, _isDefault);
+        emit CreatedInstance(tokenID, _owner, _componentFee, _componentOwner, _price, _isDefault);
 
         return tokenID;
     }

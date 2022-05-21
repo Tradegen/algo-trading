@@ -2,11 +2,11 @@
 
 pragma solidity ^0.8.3;
 
-import "../indicators/LowOfLastNPriceUpdates.sol";
+import "../../indicators/SMA.sol";
 
-contract TestLowOfLastNPriceUpdates is LowOfLastNPriceUpdates {
+contract TestSMA is SMA {
     constructor(address _componentRegistry, address _candlestickDataFeedRegistry, address _keeperRegistry)
-        LowOfLastNPriceUpdates(_componentRegistry, _candlestickDataFeedRegistry, _keeperRegistry)
+        SMA(_componentRegistry, _candlestickDataFeedRegistry, _keeperRegistry)
     {
         
     }
