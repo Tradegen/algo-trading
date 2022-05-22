@@ -1,0 +1,11 @@
+Closes.checkConditions() = 99012
+CrossesAbove.checkConditions() = 104573
+CrossesBelow.checkConditions() = 107178
+FallByAtLeast.checkConditions() = 104370
+FallByAtMost.checkConditions() = 106437
+FallsTo.checkConditions() = 102563
+IsAbove.checkConditions() = 87568
+IsBelow.checkConditions() = 87507
+RiseByAtLeast.checkConditions() = 106471
+RiseByAtMost.checkConditions() = 106471
+RisesTo.checkConditions() = 102627

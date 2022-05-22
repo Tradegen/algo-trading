@@ -77,7 +77,7 @@ describe("RiseByAtLeast", () => {
 
   describe("#createInstance", () => {
     it("onlyComponentRegistry", async () => {
-      let tx = comparator.connect(otherUser).createInstance(latestPriceAddress, intervalAddress, 1, 1);
+      let tx = comparator.connect(otherUser).createInstance(latestPriceAddress, latestPriceAddress, 1, 1);
       await expect(tx).to.be.reverted;
     });
 

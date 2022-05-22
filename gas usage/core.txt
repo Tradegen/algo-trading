@@ -1,0 +1,9 @@
+TradingBot.update() = 92710 - 235209
+TradingBot.setInitialRules() = 230156 - 507179
+TradingBotRegistry.createTradingBot() = 3407217
+TradingBotRegistry.initializeTradingBot() = 260251
+TradingBotRegistry.mintTradingBotNFT() = 133013
+TradingBotRegistry.stageTradingBot() = 330229
+KeeperRegistry.registerKeeper() = 959670
+KeeperRegistry.createJob() = 191265
+KeeperRegistry.cancelJob() = 62541

@@ -1,0 +1,11 @@
+Down.update() = 74729
+EMA.update() = 134131
+HighOfLastNPriceUpdates.update() = 135009
+Interval.update() = 128946
+LatestPrice.update() = 125348
+LowOfLastNPriceUpdates.update() = 137293
+NPercent.update() = 115576
+NthPriceUpdate.update() = 123040
+PreviousNPriceUpdates.update() = 120278
+SMA.update() = 133941
+Up.update() = 94638
