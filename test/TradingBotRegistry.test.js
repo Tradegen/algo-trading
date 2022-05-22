@@ -88,7 +88,7 @@ describe("TradingBotRegistry", () => {
         await candlestickDataFeedRegistry.deployed();
         candlestickDataFeedRegistryAddress = candlestickDataFeedRegistry.address;
 
-        tradingBotFactoryContract = await TradingBotFactoryFactory.deploy(componentsRegistryAddress, candlestickDataFeedRegistryAddress, deployer.address, tradingBotsNFTAddress);
+        tradingBotFactoryContract = await TradingBotFactoryFactory.deploy(componentsRegistryAddress, candlestickDataFeedRegistryAddress, tradingBotsNFTAddress);
         await tradingBotFactoryContract.deployed();
         tradingBotFactoryAddress = tradingBotFactoryContract.address;
 
@@ -108,7 +108,7 @@ describe("TradingBotRegistry", () => {
         let tx = await tradingBotsNFT.setTradingBotRegistryAddress(tradingBotRegistryAddress);
         await tx.wait();
 
-        let tx2 = await tradingBotFactoryContract.setTradingBotRegistry(tradingBotRegistryAddress);
+        let tx2 = await tradingBotFactoryContract.initializeContracts(tradingBotRegistryAddress, tradingBotsNFTAddress);
         await tx2.wait();
   });
   

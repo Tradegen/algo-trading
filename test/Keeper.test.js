@@ -66,6 +66,16 @@ describe("Keeper", () => {
     await feeToken.deployed();
     feeTokenAddress = feeToken.address;
 
+    componentsRegistry = await ComponentsRegistryFactory.deploy();
+    await componentsRegistry.deployed();
+    componentsRegistryAddress = componentsRegistry.address;
+
+    tradingBotRegistry = await TradingBotRegistryFactory.deploy();
+    await tradingBotRegistry.deployed();
+    tradingBotRegistryAddress = tradingBotRegistry.address;
+  });
+
+  beforeEach(async () => {
     indicator = await IndicatorFactory.deploy();
     await indicator.deployed();
     indicatorAddress = indicator.address;
@@ -78,16 +88,6 @@ describe("Keeper", () => {
     await tradingBot.deployed();
     tradingBotAddress = tradingBot.address;
 
-    componentsRegistry = await ComponentsRegistryFactory.deploy();
-    await componentsRegistry.deployed();
-    componentsRegistryAddress = componentsRegistry.address;
-
-    tradingBotRegistry = await TradingBotRegistryFactory.deploy();
-    await tradingBotRegistry.deployed();
-    tradingBotRegistryAddress = tradingBotRegistry.address;
-  });
-
-  beforeEach(async () => {
     keeperFactoryContract = await KeeperFactoryFactory.deploy();
     await keeperFactoryContract.deployed();
     keeperFactoryAddress = keeperFactoryContract.address;
