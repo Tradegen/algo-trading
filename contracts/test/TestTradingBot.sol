@@ -6,8 +6,11 @@ contract TestTradingBot {
 
     address public keeper;
     bool public canUpdate;
+    address public owner;
 
-    constructor() {}
+    constructor() {
+        owner = msg.sender;
+    }
 
     function setKeeper(address _keeper) external {
         keeper = _keeper;
@@ -19,5 +22,9 @@ contract TestTradingBot {
 
     function update() external view returns (bool) {
         return canUpdate;
+    }
+
+    function updateOwner(address _newOwner) external {
+        owner = _newOwner;
     }
 }

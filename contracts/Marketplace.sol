@@ -22,18 +22,18 @@ contract Marketplace is IMarketplace, ERC1155Holder, Ownable {
     using SafeERC20 for IERC20;
 
     // Max fee of 10%.
-    uint256 public MAX_TRANSACTION_FEE = 1000; 
+    uint256 public constant MAX_TRANSACTION_FEE = 1000; 
 
     // Denominated by 10000.
-    uint256 public transactionFee = 200; 
+    uint256 public transactionFee; 
 
     address public immutable components;
     address public immutable tradingBots;
     IERC20 public immutable TGEN;
     address public immutable xTGEN;
 
-    // Starts at index 1; increases without bounds.
-    uint256 public numberOfMarketplaceListings = 1;
+    // Starts at index 0; increases without bounds.
+    uint256 public numberOfMarketplaceListings;
 
     // Starts at index 1; increases without bounds.
     mapping (uint256 => MarketplaceListing) public marketplaceListings; 
@@ -56,6 +56,8 @@ contract Marketplace is IMarketplace, ERC1155Holder, Ownable {
         tradingBots = _tradingBots;
         TGEN = IERC20(_TGEN);
         xTGEN = _xTGEN;
+
+        transactionFee = 200;
     }
 
     /* ========== VIEWS ========== */
@@ -236,6 +238,7 @@ contract Marketplace is IMarketplace, ERC1155Holder, Ownable {
     function _removeListing(address _user, uint256 _contractType, uint256 _componentID, uint256 _index) internal {
         marketplaceListings[_index].exists = false;
         userToListingIndex[_user][_contractType][_componentID][marketplaceListings[_index].tokenID] = 0;
+        listingIndexes[marketplaceListings[_index].tokenID][_contractType][_componentID] = 0;
     }
 
     /* ========== MODIFIERS ========== */
