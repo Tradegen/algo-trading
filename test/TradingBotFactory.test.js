@@ -41,28 +41,30 @@ describe("TradingBotFactory", () => {
   });
 
   beforeEach(async () => {
-    tradingBotFactoryContract = await TradingBotFactoryFactory.deploy(componentsRegistryAddress, candlestickDataFeedRegistryAddress, deployer.address, deployer.address);
+    tradingBotFactoryContract = await TradingBotFactoryFactory.deploy(componentsRegistryAddress, candlestickDataFeedRegistryAddress, deployer.address);
     await tradingBotFactoryContract.deployed();
     tradingBotFactoryAddress = tradingBotFactoryContract.address;
   });
 
-  describe("#setTradingBotRegistry", () => {
+  describe("#initializeContracts", () => {
     it("only owner", async () => {
-      let tx = tradingBotFactoryContract.connect(otherUser).setTradingBotRegistry(otherUser.address);
+      let tx = tradingBotFactoryContract.connect(otherUser).initializeContracts(deployer.address, deployer.address);
       await expect(tx).to.be.reverted;
     });
 
     it("meets requirements", async () => {
-        let tx = await tradingBotFactoryContract.setTradingBotRegistry(deployer.address);
+        let tx = await tradingBotFactoryContract.initializeContracts(deployer.address, deployer.address);
         let temp = await tx.wait();
-        let deployedAddress = temp.events[temp.events.length - 1].args.tradingBotRegistryAddress;
-        expect(deployedAddress).to.equal(deployer.address);
+        let deployedAddress1 = temp.events[temp.events.length - 1].args.tradingBotRegistryAddress;
+        let deployedAddress2 = temp.events[temp.events.length - 1].args.keeperRegistryAddress;
+        expect(deployedAddress1).to.equal(deployer.address);
+        expect(deployedAddress2).to.equal(deployer.address);
     });
   });
   
   describe("#createTradingBot", () => {
     it("onlyComponentRegistry", async () => {
-        let tx = await tradingBotFactoryContract.setTradingBotRegistry(deployer.address);
+        let tx = await tradingBotFactoryContract.initializeContracts(deployer.address, deployer.address);
         await tx.wait();
 
         let tx2 = tradingBotFactoryContract.connect(otherUser).createTradingBot(otherUser.address);
@@ -70,7 +72,7 @@ describe("TradingBotFactory", () => {
     });
 
     it("meets requirements", async () => {
-        let tx = await tradingBotFactoryContract.setTradingBotRegistry(deployer.address);
+        let tx = await tradingBotFactoryContract.initializeContracts(deployer.address, deployer.address);
         await tx.wait();
 
         let tx2 = await tradingBotFactoryContract.createTradingBot(deployer.address);

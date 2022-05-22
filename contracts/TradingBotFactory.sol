@@ -15,13 +15,12 @@ contract TradingBotFactory is ITradingBotFactory, Ownable {
     address immutable componentsRegistry;
     address immutable candlestickDataFeedRegistry;
     address tradingBotRegistry;
-    address immutable keeperRegistry;
+    address keeperRegistry;
     address immutable tradingBotNFT;
 
-    constructor(address _componentsRegistry, address _candlestickDataFeedRegistry, address _keeperRegistry, address _tradingBotNFT) Ownable() {
+    constructor(address _componentsRegistry, address _candlestickDataFeedRegistry, address _tradingBotNFT) Ownable() {
         componentsRegistry = _componentsRegistry;
         candlestickDataFeedRegistry = _candlestickDataFeedRegistry;
-        keeperRegistry = _keeperRegistry;
         tradingBotNFT = _tradingBotNFT;
     }
 
@@ -44,16 +43,21 @@ contract TradingBotFactory is ITradingBotFactory, Ownable {
     /* ========== RESTRICTED FUNCTIONS ========== */
 
     /**
-    * @notice Sets the address of the TradingBotRegistry contract.
-    * @dev The address is initialized outside of the constructor to avoid a circular dependency with TradingBotRegistry.
+    * @notice Sets the address of the TradingBotRegistry and KeeperRegistry contracts.
+    * @dev The address is initialized outside of the constructor to avoid a circular dependency with TradingBotRegistry and KeeperRegistry.
     * @dev This function can only be called by the TradingBotFactory owner.
     * @dev This function can only be called once.
     * @param _tradingBotRegistry Address of the TradingBotRegistry contract.
+    * @param _keeperRegistry Address of the KeeperRegistry contract.
     */
-    function setTradingBotRegistry(address _tradingBotRegistry) external onlyOwner {
-        tradingBotRegistry = _tradingBotRegistry;
+    function initializeContracts(address _tradingBotRegistry, address _keeperRegistry) external onlyOwner {
+        require(tradingBotRegistry == address(0), "TradingBotFactory: Already set TradingBotRegistry.");
+        require(keeperRegistry == address(0), "TradingBotFactory: Already set KeeperRegistry.");
 
-        emit SetTradingBotRegistry(_tradingBotRegistry);
+        tradingBotRegistry = _tradingBotRegistry;
+        keeperRegistry = _keeperRegistry;
+
+        emit InitializedContracts(_tradingBotRegistry, _keeperRegistry);
     }
 
     /* ========== MODIFIERS ========== */
@@ -67,5 +71,5 @@ contract TradingBotFactory is ITradingBotFactory, Ownable {
     /* ========== EVENTS ========== */
 
     event CreatedTradingBot(address owner, address tradingBotContractAddress);
-    event SetTradingBotRegistry(address tradingBotRegistryAddress);
+    event InitializedContracts(address tradingBotRegistryAddress, address keeperRegistryAddress);
 }

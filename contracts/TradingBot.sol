@@ -135,8 +135,6 @@ contract TradingBot is ITradingBot {
     * @param _newOwner Address of the new owner.
     */
     function updateOwner(address _newOwner) external override onlyTradingBots {
-        require(_newOwner != address(0), "TradingBot: Invalid address for new owner.");
-
         owner = _newOwner;
         operator = _newOwner;
 
@@ -478,7 +476,6 @@ contract TradingBot is ITradingBot {
         require(msg.sender == tradingBots, "TradingBot: Only the TradingBots NFT contract can call this function.");
         _;
     }
-
 
     modifier onlyTradingBotRegistry() {
         require(msg.sender == tradingBotRegistry, "TradingBot: Only the TradingBotRegistry contract can call this function.");

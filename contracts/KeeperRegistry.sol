@@ -25,8 +25,8 @@ contract KeeperRegistry is IKeeperRegistry, Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     uint256 constant MAX_JOBS_PER_KEEPER = 10;
-    uint256 constant MAX_KEEPER_FEE = 1e21;
-    uint256 constant MAX_FEE_INCREASE = 1e19;
+    uint256 MAX_KEEPER_FEE;
+    uint256 MAX_FEE_INCREASE;
     uint256 constant MIN_TIME_BETWEEN_FEE_CHANGES = 1 days;
 
     IERC20 immutable feeToken;
@@ -68,6 +68,9 @@ contract KeeperRegistry is IKeeperRegistry, Ownable, ReentrancyGuard {
         componentsRegistry = IComponentsRegistry(_componentsRegistry);
         tradingBotRegistry = ITradingBotRegistry(_tradingBotRegistry);
         keeperFactory = IKeeperFactory(_keeperFactory);
+
+        MAX_FEE_INCREASE = 1e20;
+        MAX_KEEPER_FEE = 1e21;
     }
 
     /* ========== VIEWS ========== */
@@ -358,6 +361,30 @@ contract KeeperRegistry is IKeeperRegistry, Ownable, ReentrancyGuard {
         emit UpdatedDedicatedCaller(_keeper, _newCaller);
     }
 
+    /* ========== RESTRICTED FUNCTIONS ========== */
+
+    /**
+    * @notice Updates the max keeper fee.
+    * @dev Only the KeeperRegistry's owner can call this function.
+    * @param _newFee The new max keeper fee (in TGEN).
+    */
+    function updateMaxKeeperFee(uint256 _newFee) external onlyOwner {
+        MAX_KEEPER_FEE = _newFee;
+
+        emit UpdatedMaxKeeperFee(_newFee);
+    }
+
+    /**
+    * @notice Updates the max fee increase.
+    * @dev Only the KeeperRegistry's owner can call this function.
+    * @param _newLimit The new max fee increase (in TGEN).
+    */
+    function updateMaxFeeIncrease(uint256 _newLimit) external onlyOwner {
+        MAX_FEE_INCREASE = _newLimit;
+
+        emit UpdatedMaxFeeIncrease(_newLimit);
+    }
+
     /* ========== INTERNAL FUNCTIONS ========== */
 
     /**
@@ -411,4 +438,6 @@ contract KeeperRegistry is IKeeperRegistry, Ownable, ReentrancyGuard {
     event RegisteredKeeper(address keeper, address owner, address dedicatedCaller, address payee, uint256 fee);
     event CreatedJob(uint8 jobType, uint256 jobID, address owner, address keeper, address target, uint256 instanceID);
     event UpdatedDedicatedCaller(address keeper, address newCaller);
+    event UpdatedMaxKeeperFee(uint256 newFee);
+    event UpdatedMaxFeeIncrease(uint256 newLimit);
 }
