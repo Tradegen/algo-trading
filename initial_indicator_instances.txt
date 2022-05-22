@@ -1,0 +1,10 @@
+Down (1):
+    1: BTC, 1-min, 1-min, []
+Up (11):
+    1: BTC, 1-min, 1-min, []
+EMA (2):
+    1: BTC, 1-min, 1-min, [20]
+Latest price (5):
+    1: BTC, 1-min, 1-min, []
+SMA (10):
+    1: BTC, 1-min, 1-min, [20]
