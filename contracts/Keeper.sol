@@ -16,7 +16,6 @@ contract Keeper is IKeeper {
     address public immutable owner;
     address public dedicatedCaller;
 
-    // Contract is being created by KeeperFactory, so KeeperRegistry needs to be set separately.
     constructor(address _keeperRegistry, address _owner, address _dedicatedCaller) {
         require(_owner != address(0), "Keeper: Invalid address for _owner.");
         require(_dedicatedCaller != address(0), "Keeper: Invalid address for _dedicatedCaller.");
@@ -26,7 +25,7 @@ contract Keeper is IKeeper {
         dedicatedCaller = _dedicatedCaller;
     }
 
-     /* ========== VIEWS ========== */
+    /* ========== VIEWS ========== */
 
     /**
     * @notice Checks whether the given job can be performed.
