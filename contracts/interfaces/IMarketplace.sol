@@ -8,26 +8,28 @@ interface IMarketplace {
     struct MarketplaceListing {
         address seller;
         bool exists;
-        bool isTradingBot;
-        uint256 ID;
+        uint256 contractType; // 0 = trading bot, 1 = component, 2 = component instance.
+        uint256 componentID;
+        uint256 tokenID;
         uint256 price; // Denominated in TGEN.
     }
 
     /**
     * @notice Given an NFT ID, returns its listing index.
     * @dev Returns 0 if the NFT with the given ID is not listed.
-    * @param _ID Token ID of the indicator/comparator NFT.
-    * @param _isTradingBot Whether the NFT is a trading bot.
-    * @return (uint256) Listing index of the indicator/comparator NFT.
+    * @param _tokenID Token ID of the given contract type.
+    * @param _contractType The type (0, 1, 2) of the contract.
+    * @param _componentID The ID of the component. This value is not used if the contract type is not 2.
+    * @return (uint256) Listing index of the NFT.
     */
-    function getListingIndex(uint256 _ID, bool _isTradingBot) external view returns (uint256);
+    function getListingIndex(uint256 _tokenID, uint256 _contractType, uint256 _componentID) external view returns (uint256);
 
     /**
     * @notice Given the index of a marketplace listing, returns the listing's data
     * @param _index Index of the marketplace listing
-    * @return (address, bool, bool, uint256, uint256) Address of the seller, whether the listing exists, whether the NFT is a trading bot, NFT ID, and the price (in TGEN).
+    * @return (address, bool, uint256, uint256, uint256, uint256) Address of the seller, whether the listing exists, the contract type, the component ID, NFT ID, and the price (in TGEN).
     */
-    function getMarketplaceListing(uint256 _index) external view returns (address, bool, bool, uint256, uint256);
+    function getMarketplaceListing(uint256 _index) external view returns (address, bool, uint256, uint256, uint256, uint256);
 
     /**
     * @notice Purchases the indicator/comparator NFT at the given listing index.
@@ -37,11 +39,12 @@ interface IMarketplace {
 
     /**
     * @notice Creates a new marketplace listing with the given price and NFT ID.
-    * @param _ID ID of the indicator/comparator NFT.
-    * @param _isTradingBot Whether the NFT is a trading bot.
+    * @param _tokenID NFT ID of the contract.
+    * @param _contractType The type (0, 1, 2) of contract.
+    * @param _componentID The ID of the component. This value is not used if the contract type is not 2.
     * @param _price TGEN price of the NFT.
     */
-    function createListing(uint256 _ID, bool _isTradingBot, uint256 _price) external;
+    function createListing(uint256 _tokenID, uint256 _contractType, uint256 _componentID, uint256 _price) external;
 
     /**
     * @notice Removes the marketplace listing at the given index.
@@ -58,8 +61,8 @@ interface IMarketplace {
 
     /* ========== EVENTS ========== */
 
-    event CreatedListing(address indexed seller, uint256 marketplaceListingIndex, bool isTradingBot, uint256 ID, uint256 price);
+    event CreatedListing(address indexed seller, uint256 marketplaceListingIndex, uint256 contractType, uint256 componentID, uint256 tokenID, uint256 price);
     event RemovedListing(address indexed seller, uint256 marketplaceListingIndex);
     event UpdatedPrice(address indexed seller, uint256 marketplaceListingIndex, uint256 newPrice);
-    event Purchased(address indexed buyer, uint256 marketplaceListingIndex, uint256 ID, bool isTradingBot, uint256 price);
+    event Purchased(address indexed buyer, uint256 marketplaceListingIndex, uint256 tokenID, uint256 contractType, uint256 componentID, uint256 price);
 }
