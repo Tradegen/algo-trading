@@ -164,14 +164,13 @@ contract ComponentsRegistry is IComponentsRegistry, IComponent, Ownable {
     * @dev Returns 0 for each value if the instance is out of bounds.
     * @param _componentID ID of the component.
     * @param _instance Instance number of this indicator.
-    * @return (string, address, uint256, uint256, uint256[])  Asset symbol,
+    * @return (string, address, uint256, uint256[], uint256[])  Asset symbol,
     *                                                         timeframe of the asset (in minutes),
     *                                                         the current value of the given instance,
     *                                                         an array of params for the given instance,
-    *                                                         an array of variables for the given instance,
-    *                                                         the history of the given instance.
+    *                                                         an array of variables for the given instance.
     */
-    function getIndicatorState(uint256 _componentID, uint256 _instance) external view override returns (string memory, uint256, uint256, uint256[] memory, uint256[] memory, uint256[] memory) {
+    function getIndicatorState(uint256 _componentID, uint256 _instance) external view override returns (string memory, uint256, uint256, uint256[] memory, uint256[] memory) {
         (,, address contractAddress,,) = componentsFactory.getComponentInfo(_componentID);
 
         return IIndicator(contractAddress).getState(_instance);

@@ -383,7 +383,6 @@ describe("ComponentsRegistry", () => {
         expect(indicatorState[2]).to.equal(0);
         expect(indicatorState[3].length).to.equal(0);
         expect(indicatorState[4].length).to.equal(0);
-        expect(indicatorState[5].length).to.equal(0);
 
         let hasPurchasedInstance = await componentsRegistry.hasPurchasedComponentInstance(deployer.address, 1, 1);
         expect(hasPurchasedInstance).to.be.true;
@@ -480,7 +479,6 @@ describe("ComponentsRegistry", () => {
         expect(indicatorState1[2]).to.equal(parseEther("10"));
         expect(indicatorState1[3].length).to.equal(0);
         expect(indicatorState1[4].length).to.equal(0);
-        expect(indicatorState1[5].length).to.equal(1);
 
         let indicatorState2 = await componentsRegistry.getIndicatorState(2, 1);
         expect(indicatorState2[0]).to.equal("BTC");
@@ -491,7 +489,6 @@ describe("ComponentsRegistry", () => {
         expect(indicatorState2[4].length).to.equal(2);
         expect(indicatorState2[4][0]).to.equal(0);
         expect(indicatorState2[4][1]).to.equal(21);
-        expect(indicatorState2[5].length).to.equal(0);
 
         let indicatorState3 = await componentsRegistry.getIndicatorState(1, 2);
         expect(indicatorState3[0]).to.equal("BTC");
@@ -499,7 +496,6 @@ describe("ComponentsRegistry", () => {
         expect(indicatorState3[2]).to.equal(parseEther("10"));
         expect(indicatorState3[3].length).to.equal(0);
         expect(indicatorState3[4].length).to.equal(0);
-        expect(indicatorState3[5].length).to.equal(1);
 
         let indicatorState4 = await componentsRegistry.getIndicatorState(2, 2);
         expect(indicatorState4[0]).to.equal("BTC");
@@ -510,7 +506,6 @@ describe("ComponentsRegistry", () => {
         expect(indicatorState4[4].length).to.equal(2);
         expect(indicatorState4[4][0]).to.equal(0);
         expect(indicatorState4[4][1]).to.equal(41);
-        expect(indicatorState4[5].length).to.equal(0);
 
         let hasPurchasedInstance1 = await componentsRegistry.hasPurchasedComponentInstance(deployer.address, 1, 1);
         expect(hasPurchasedInstance1).to.be.true;

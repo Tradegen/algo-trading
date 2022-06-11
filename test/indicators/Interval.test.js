@@ -102,7 +102,6 @@ describe("Interval", () => {
         expect(state[3][0]).to.equal(parseEther("10000"));
         expect(state[3][1]).to.equal(1);
         expect(state[4].length).to.equal(0);
-        expect(state[5].length).to.equal(0);
     });
   });
 

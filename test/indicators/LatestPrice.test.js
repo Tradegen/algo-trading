@@ -80,7 +80,6 @@ describe("LatestPrice", () => {
         expect(state[2]).to.equal(0);
         expect(state[3].length).to.equal(0);
         expect(state[4].length).to.equal(0);
-        expect(state[5].length).to.equal(0);
     });
   });
 

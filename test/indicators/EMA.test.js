@@ -92,7 +92,6 @@ describe("EMA", () => {
         expect(state[3][0]).to.equal(20);
         expect(state[4].length).to.equal(2);
         expect(state[4][0]).to.equal(0);
-        expect(state[5].length).to.equal(0);
     });
   });
 

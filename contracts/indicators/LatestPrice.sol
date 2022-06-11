@@ -32,6 +32,13 @@ contract LatestPrice is IIndicator {
     // (instance number => instance state).
     mapping (uint256 => State) public instances;
 
+    // (instance number => number of updates).
+    // Used for keeping track of the last index in the history of an instance.
+    mapping (uint256 => uint256) public updateCount;
+
+    // (instance number => index => value).
+    mapping (uint256 => mapping (uint256 => uint256)) public history;
+
     // (instance number => timestamp at which the instance was last updated).
     // Prevents keepers from updating instances too frequently.
     mapping (uint256 => uint256) public lastUpdated;
@@ -83,16 +90,15 @@ contract LatestPrice is IIndicator {
     * @return (uint256[] memory) Indicator value history for the given instance.
     */
     function getHistory(uint256 _instance) external view override returns (uint256[] memory) {
-        uint256 historyLength = instances[_instance].history.length;
+        uint256 historyLength = updateCount[_instance];
         uint256 length = historyLength >= MAX_HISTORY_LENGTH ? MAX_HISTORY_LENGTH : historyLength;
-        uint256[] memory history = new uint256[](length);
+        uint256[] memory result = new uint256[](length);
 
         for (uint256 i = 0; i < length; i++) {
-            history[i] = instances[_instance].history[historyLength.sub(length).add(i)];
+            result[i] = history[_instance][historyLength.sub(length).add(i)];
         }
 
-
-        return history;
+        return result;
     }
 
     /**
@@ -121,19 +127,17 @@ contract LatestPrice is IIndicator {
     * @notice Returns the state of the given indicator instance.
     * @dev Returns 0 for each value if the instance is out of bounds.
     * @param _instance Instance number of this indicator.
-    * @return (string, address, uint256, uint256, uint256[])  Asset symbol,
+    * @return (string, address, uint256, uint256[], uint256[])  Asset symbol,
     *                                                         timeframe of the asset (in minutes),
     *                                                         the current value of the given instance,
     *                                                         an array of params for the given instance,
-    *                                                         an array of variables for the given instance,
-    *                                                         the history of the given instance.
+    *                                                         an array of variables for the given instance.
     */
-    function getState(uint256 _instance) external view override returns (string memory, uint256, uint256, uint256[] memory, uint256[] memory, uint256[] memory) {
+    function getState(uint256 _instance) external view override returns (string memory, uint256, uint256, uint256[] memory, uint256[] memory) {
         // Gas savings.
         State memory state = instances[_instance];
         uint256[] memory params = new uint256[](state.params.length);
         uint256[] memory variables = new uint256[](state.variables.length);
-        uint256[] memory history = new uint256[](state.history.length >= MAX_HISTORY_LENGTH ? MAX_HISTORY_LENGTH : state.history.length);
 
         for (uint256 i = 0; i < params.length; i++) {
             params[i] = instances[_instance].params[i];
@@ -143,11 +147,7 @@ contract LatestPrice is IIndicator {
             variables[i] = instances[_instance].variables[i];
         }
 
-        for (uint256 i = 0; i < history.length; i++) {
-            history[i] = instances[_instance].history[i];
-        }
-
-        return (state.asset, state.assetTimeframe, state.value, params, variables, history);
+        return (state.asset, state.assetTimeframe, state.value, params, variables);
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
@@ -175,8 +175,7 @@ contract LatestPrice is IIndicator {
             assetTimeframe: _assetTimeframe,
             value: 0,
             params: _params,
-            variables: new uint256[](0),
-            history: new uint256[](0)
+            variables: new uint256[](0)
         });
 
         emit CreatedInstance(numberOfInstances, _asset, _assetTimeframe, _indicatorTimeframe, _params);
@@ -202,8 +201,9 @@ contract LatestPrice is IIndicator {
         }
 
         instances[_instance].value = latestPrice;
-        instances[_instance].history.push(latestPrice);
         lastUpdated[_instance] = block.timestamp;
+        history[_instance][updateCount[_instance]] = latestPrice;
+        updateCount[_instance] = updateCount[_instance].add(1);
         
         emit Updated(_instance, latestPrice, latestPrice);
 

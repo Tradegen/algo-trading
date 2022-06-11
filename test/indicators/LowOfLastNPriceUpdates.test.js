@@ -91,7 +91,6 @@ describe("LowOfLastNPriceUpdates", () => {
         expect(state[3].length).to.equal(1);
         expect(state[3][0]).to.equal(20);
         expect(state[4].length).to.equal(0);
-        expect(state[5].length).to.equal(0);
     });
   });
 

@@ -73,7 +73,7 @@ describe("NPercent", () => {
         expect(value[0]).to.equal(1000);
 
         let history = await indicator.getHistory(1);
-        expect(history.length).to.equal(0);
+        expect(history.length).to.equal(1);
 
         let indicatorTimeframe = await indicator.indicatorTimeframe(1);
         expect(indicatorTimeframe).to.equal(1);
@@ -91,7 +91,6 @@ describe("NPercent", () => {
         expect(state[3].length).to.equal(1);
         expect(state[3][0]).to.equal(1000);
         expect(state[4].length).to.equal(0);
-        expect(state[5].length).to.equal(0);
     });
   });
 
@@ -178,10 +177,8 @@ describe("NPercent", () => {
         await tx10.wait();
 
         let history = await indicator.getHistory(1);
-        expect(history.length).to.equal(3);
+        expect(history.length).to.equal(1);
         expect(history[0]).to.equal(2000);
-        expect(history[1]).to.equal(2000);
-        expect(history[2]).to.equal(2000);
 
         let value = await indicator.getValue(1);
         expect(value.length).to.equal(1);
@@ -207,9 +204,8 @@ describe("NPercent", () => {
         }
 
         let history = await indicator.getHistory(1);
-        expect(history.length).to.equal(20);
+        expect(history.length).to.equal(1);
         expect(history[0]).to.equal(2000);
-        expect(history[19]).to.equal(2000);
 
         let value = await indicator.getValue(1);
         expect(value.length).to.equal(1);
