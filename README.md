@@ -26,6 +26,38 @@ A keeper network is used to check a trading bot's entry/exit rules at regular in
 * No slippage or exchange fees. Users can create strategies that trade with higher frequency without reducing profits.  
 * Let trading bot owners monetize their data. Profit potential becomes dependent on the quality of a strategy (reasonable set of entry/exit rules with consistent returns) instead of the amount of capital invested. Good strategies are more likely to have their data feed used by other projects, leading to risk-free revenue for their developers.
 
+### Default Indicators and Comparators
+
+The protocol consists of several default indicators/comparators that can be used without paying an 'instance creation fee'.
+
+Default comparators:
+
+* Closes
+* Crosses above
+* Crosses below
+* Fall by at least
+* Fall by at most
+* Falls to
+* Is above
+* Is below
+* Rise by at least
+* Rise by at most
+* Rises to
+
+Default indicators:
+
+* Down
+* EMA (exponential moving average)
+* High of last N price updates
+* Interval
+* Latest price
+* Low of last N price updates
+* N percent
+* Nth price update
+* Previous N price updates
+* SMA (simple moving average)
+* Up
+
 ## Disclaimer
 
 These smart contracts have not been audited yet.
