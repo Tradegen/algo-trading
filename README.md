@@ -10,11 +10,15 @@ Each indicator acts as a 'derived price feed', taking the latest price data for 
 
 ## Disclaimer
 
-These smart contracts have not been audited or deployed yet.
+These smart contracts have not been audited yet.
 
-## Docs
+This protocol is very expensive to operate on an EVM-compatible blockchain. Running a trading bot costs on average 1.5 million gas per call (once per timeframe specified by bot), which can quickly congest the network. This protocol is for demonstration purposes only, and will need to run on its own blockchain to be used in production.
 
-Docs are available at https://docs.tradegen.io
+## Documentation
+
+To learn more about the Tradegen project, visit the docs at https://docs.tradegen.io.
+
+This protocol is launched on the Celo blockchain. To learn more about Celo, visit their home page: https://celo.org/.
 
 ## License
 
