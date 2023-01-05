@@ -58,6 +58,21 @@ Default indicators:
 * SMA (simple moving average)
 * Up
 
+### Smart Contracts
+
+* ComponentInstances - Tracks the instances of a specific indicator/comparator and handles token logic. A separate contract is created for each indicator/comparator.
+* ComponentInstancesFactory - Creates a ComponentInstances contract when registering an indicator/comparator.
+* Components - Handles token logic each indicator/comparator. One contract is used across all indicators/comparators.
+* ComponentsRegistry - Registers/manages each indicator/comparator and tracks their state.
+* Keeper - Checks whether a component/bot can be updated and provides a wrapper function for updating a component/bot. This contract is called regularly by a script running on a cloud provider.
+* KeeperFactory - Creates a Keeper contract when registering a keeper.
+* KeeperRegistry - Registers/manages keepers, creates jobs for keepers to perform, and manages funds used for paying keeper fees.
+* Marketplace - Used for buying/selling trading bots, indicators/comparators, and instances.
+* TradingBot - Implements a trading strategy and provides functions for updating state/parameters.
+* TradingBotFactory - Creates a TradingBot contract when registering a trading bot.
+* TradingBotRegistry - Registers trading bots and provides a wrapper function for viewing a trading bot's state.
+* TradingBots - Handles the token logic for a trading bot. One contract is used across all trading bots. 
+
 ## Repository Structure
 
 ```
