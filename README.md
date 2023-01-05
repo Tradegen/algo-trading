@@ -58,6 +58,23 @@ Default indicators:
 * SMA (simple moving average)
 * Up
 
+## Repository Structure
+
+```
+.
+├── abi  ## Generated ABIs that developers can use to interact with the system.
+├── contract addresses  ## Address of each deployed contract, organized by network.
+├── contracts  ## All source code.
+│   ├── comparators  ## Implementation of each default comparator.
+│   ├── indicators  ## Implementation of each default indicator.
+│   ├── interfaces  ## Interfaces used for defining/calling contracts.
+│   ├── openzeppelin-solidity  ## Helper contracts provided by OpenZeppelin.
+│   ├── test  ## Mock contracts used for testing main contracts.
+├── gas usage ## Tracks the gas usage of different transactions.
+├── keeper script ## Keeper scripts for different cloud providers.
+├── test ## Source code for testing code in //contracts.
+```
+
 ## Disclaimer
 
 These smart contracts have not been audited yet.
