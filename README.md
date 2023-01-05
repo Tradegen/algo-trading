@@ -18,6 +18,14 @@ Each comparator takes the value of two indicator instances and applies a compari
 
 A keeper network is used to check a trading bot's entry/exit rules at regular intervals (once per timeframe specified by the bot's developer), since the code cannot execute automatically. Each keeper consists of a smart contract and a script running on the cloud. The script runs continuously and calls the keeper contract once per minute to check if any trading bots need to be updated. If a bot needs to be updated, the contract will collect a keeper fee from the bot's owner then send a transaction to the trading bot contract to check the entry/exit rules against the latest price data. To run a trading bot, the owner needs to assign a keeper to the bot and deposit funds in an escrow contract to pay the keeper fee. Anyone can register as a keeper and run a script.
 
+### Why Simulated Trades?
+
+* Support leveraged positions without having to worry about liquidity in the system. Leverage can be implemented by multiplying price changes by a scalar.
+* Prevent the project from becoming dependent on a specific exchange for executing orders. This helps prevent 'contagion', where the collapse of one project causes other projects relying on that project to collapse as well. 
+* No price manipulation or front-running. Since orders are not being placed on an exchange, liquidity cannot be manipulated to affect execution price.
+* No slippage or exchange fees. Users can create strategies that trade with higher frequency without reducing profits.  
+* Let trading bot owners monetize their data. Profit potential becomes dependent on the quality of a strategy (reasonable set of entry/exit rules with consistent returns) instead of the amount of capital invested. Good strategies are more likely to have their data feed used by other projects, leading to risk-free revenue for their developers.
+
 ## Disclaimer
 
 These smart contracts have not been audited yet.
