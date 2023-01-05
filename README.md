@@ -8,6 +8,10 @@ Trading bots consist of several entry/exit rules, each with a comparator and two
 
 Each indicator acts as a 'derived price feed', taking the latest price data for a major crypto and applying some calculations to it to get a new price. For example, an indicator may track Ethereum's 50-day moving average. Developers could use the data from these indicators to create synthetic assets.
 
+## Purpose
+
+Create a democratized algo trading system on the Celo blockchain.
+
 ## Disclaimer
 
 These smart contracts have not been audited yet.
